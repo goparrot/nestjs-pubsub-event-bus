@@ -1,0 +1,112 @@
+{
+    "name": "@goparrot/pubsub-event-bus",
+    "description": "NestJS EventBus extension for RabbitMQ PubSub",
+    "version": "1.0.0-dev.3",
+    "main": "src/index.js",
+    "scripts": {
+        "commit": "git-cz",
+        "pre-commit": "npm run format:staged && tsc --project tsconfig.json && npm run build:dist && npm run lint",
+        "lint": "npm run lint:base -- '.'",
+        "lint:base": "npm run lint:config:check && eslint --ignore-path .gitignore --ext .ts,.tsx,.json,.js,.jsx",
+        "lint:config:check": "eslint --print-config src/index.ts | eslint-config-prettier-check",
+        "format": "npm run format:base -- '.'",
+        "format:base": "npm run lint:base -- --fix",
+        "format:staged": "lint-staged",
+        "test": "jest",
+        "coverage": "jest --collect-coverage",
+        "build:dist": "rimraf dist && tsc --project tsconfig.compile.json && node bin/prepublish.js",
+        "check:tsc": "rimraf dist/* && tsc --project tsconfig.json && rimraf dist",
+        "prepublishOnly": "echo \"use 'npm run publish'\" && exit 1",
+        "publish": "npm run build:dist && node bin/prepublish.js && npm publish dist",
+        "publish:dev": "npm run publish --tag dev",
+        "publish:dev:dry": "npm run publish:dev --dry-run",
+        "preversion": "npm run pre-commit",
+        "version": "echo \"use 'npm run release'\" && exit 1",
+        "postversion": "git push && git push --tags",
+        "release": "standard-version && git push && git push --tags && npm run publish && npm run github-release",
+        "release:dry": "npm run publish:dev:dry && standard-version --dry-run",
+        "github-release": "conventional-github-releaser -p angular"
+    },
+    "author": "",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/goparrot/nestjs-pubsub-event-bus.git"
+    },
+    "keywords": [
+        "NestJS",
+        "PubSub",
+        "EventBus",
+        "CqrsModule"
+    ],
+    "directories": {
+        "bin": "./bin",
+        "lib": "./src",
+        "test": "./test"
+    },
+    "engines": {
+        "node": "^12.10"
+    },
+    "husky": {
+        "hooks": {
+            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS && npm run pre-commit",
+            "post-commit": "git update-index --again"
+        }
+    },
+    "lint-staged": {
+        "*.{ts,tsx,json,js,jsx}": [
+            "npm run format:base"
+        ]
+    },
+    "config": {
+        "commitizen": {
+            "path": "cz-conventional-changelog"
+        }
+    },
+    "bugs": {
+        "url": "https://github.com/goparrot/nestjs-pubsub-event-bus/issues"
+    },
+    "homepage": "https://github.com/goparrot/nestjs-pubsub-event-bus#readme",
+    "devDependencies": {
+        "@commitlint/cli": "^8.3.5",
+        "@commitlint/config-conventional": "^8.3.4",
+        "@nestjs/common": "^7.1.3",
+        "@nestjs/core": "^7.1.3",
+        "@nestjs/cqrs": "^7.0.0",
+        "@types/amqp-connection-manager": "^2.0.10",
+        "@types/jest": "26.0.1",
+        "@types/lodash": "^4.14.155",
+        "@typescript-eslint/eslint-plugin": "^3.1.0",
+        "@typescript-eslint/parser": "^3.2.0",
+        "amqp-connection-manager": "3.2.0",
+        "amqplib": "0.5.6",
+        "class-transformer": "0.2.3",
+        "commitizen": "^4.1.2",
+        "conventional-changelog-cli": "^2.0.34",
+        "cz-conventional-changelog": "^3.2.0",
+        "eslint": "^7.2.0",
+        "eslint-config-prettier": "^6.11.0",
+        "eslint-import-resolver-typescript": "^2.0.0",
+        "eslint-plugin-import": "^2.21.2",
+        "eslint-plugin-prettier": "^3.1.3",
+        "husky": "^4.2.5",
+        "lint-staged": "^10.2.9",
+        "lodash": "4.17.15",
+        "prettier": "^2.0.5",
+        "reflect-metadata": "0.1.13",
+        "rimraf": "^3.0.2",
+        "rxjs": "6.5.5",
+        "standard-version": "8.0.0",
+        "ts-jest": "26.1.1",
+        "typescript": "^3.9.5"
+    },
+    "peerDependencies": {
+        "@nestjs/common": ">=7.*",
+        "@nestjs/core": ">=7.*",
+        "@nestjs/cqrs": ">=7.*",
+        "amqp-connection-manager": ">=3.2",
+        "amqplib": ">=0.5",
+        "reflect-metadata": ">=0.1",
+        "lodash": ">=4.*"
+    }
+}
