@@ -1,4 +1,4 @@
-import { ChannelWrapper } from 'amqp-connection-manager';
+import { ConfirmChannel } from 'amqplib';
 import { PublishOptions } from '../interface';
 import { ConfigProvider } from '../provider';
 import { PubsubManager } from './PubsubManager';
@@ -12,19 +12,23 @@ export class Producer extends PubsubManager {
      * @param publishHeaders - custom message headers
      */
     async produce(event: string, payload: Record<string, any> | Buffer, exchange: string, publishHeaders?: PublishOptions): Promise<void> {
-        let channel: ChannelWrapper | undefined;
         const headers: PublishOptions = { ...this.headers(publishHeaders), type: event };
 
-        this.logger().log(`Publish "${event}" to "${exchange}" with ${JSON.stringify({ payload, headers })}`);
+        await this.channel(exchange, (ch: ConfirmChannel): void => {
+            const message: string = `Event "${event}" to "${exchange}" with ${JSON.stringify({
+                payload,
+                headers,
+            })}`;
 
-        try {
-            channel = await this.channel(exchange);
-            await channel.publish(exchange, event, payload, headers);
-        } catch (e) {
-            this.logger().warn(`Unable to publish: [${(e as Error).message}]`);
-        } finally {
-            channel && (await channel.close());
-        }
+            ch.publish(exchange, event, Buffer.from(JSON.stringify(payload)), headers, (err: Error | undefined): void => {
+                const isSuccess: boolean = !err;
+
+                isSuccess ? this.logger().log(`${message} -> PUBLISHED.`) : this.logger().warn(`${message} -> UNPUBLISHED -> [${(err as Error).message}]`);
+
+                ch && ch.close();
+                this.connection && this.connection.close();
+            });
+        });
     }
 
     protected headers(extra?: PublishOptions): PublishOptions {

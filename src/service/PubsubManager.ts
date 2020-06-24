@@ -19,14 +19,14 @@ export abstract class PubsubManager implements OnModuleDestroy {
     protected async channel(exchange: string, onExchangeCreated?: (channel: ConfirmChannel) => any): Promise<ChannelWrapper> {
         if (!this.connection?.isConnected()) {
             this.connection = RabbitManager.connect(ConnectionProvider.connections, {
-                heartbeatIntervalInSeconds: 3,
-                reconnectTimeInSeconds: 3,
+                heartbeatIntervalInSeconds: 5,
+                reconnectTimeInSeconds: 5,
             });
 
-            this.connection.on('disconnect', () => {
+            this.connection.on('disconnect', (arg: { err: Error }) => {
                 // Connection handler uses auto-retries mechanism.
                 // So far, this is the only way to ensure, the connection was established.
-                this.logger().error(`RabbitMQ was disconnected.`);
+                this.logger().error(arg.err.message);
             });
         }
 

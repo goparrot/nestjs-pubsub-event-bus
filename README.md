@@ -1,7 +1,8 @@
-# RabbitMQ CQRS module
+# PubsubEventBus
 
-RabbitMQ CQRS Module built on top of NestJS CQRS.
-It gives the ability to use NestJS CqrsModule across microservice architecture, using RabbitMQ message broker.
+PubsubEventBus is built on top of [NestJS CQRS module](https://github.com/nestjs/cqrs).
+
+It gives the ability to use NestJS Cqrs Module across microservice architecture, using RabbitMQ message broker.
 
 ## Installation
 
@@ -9,60 +10,73 @@ First install the required package:
 
 `npm install --save @goparrot/pubsub-event-bus`
 
-Optionally, install `peerDependencies`, recommended by a package.
+It is highly recommended installing `peerDependencies` by yourself.
 
 ## Import module
 
 Import module & configure it by providing the connection string.
 
+    export const connections: string[] = ['amqp://username:pass@example.com/virtualhost'];
     @Module({
-        imports: [
-            CqrsModule.forRoot({
-                connections: ['amqp://username:pass@example.com/virtualhost'],
-            }),
-        ],
+        imports: [ CqrsModule.forRoot({ connections }) ],
     })
     export class AppModule {}
 
-Note: `CqrsModule` is imported from `@goparrot/pubsub-event-bus` library.
+Note: The `CqrsModule` class should be imported from `@goparrot/pubsub-event-bus` library.
 
-## Publish event
+## Events
 
-Inject `EventBus` into your service/controller in order to emit events.
+### Create event
 
-```ts
-this.eventBus.publish(new StoreCreated({ storeId }));
-```
-
-### Create & publish events
-
-Event is a simple class, that handles the event payload.
+Event is a simple class with message payload.
 
 ```ts
-export class ItemCreated {
-    constructor(readonly itemId: string) {}
+export class StoreCreated {
+    constructor({ storeId: 'real-store-id' }) {}
 }
 ```
 
-In order to make it a PubSub ready, it should extend a `PubsubEvent` class (from `@goparrot/pubsub-event-bus`).
+This is the fully compatible event class that can be used with NestJS EventBus.
+
+In order to make it a PubSub ready, it should extend a `PubsubEvent` class (imported from `@goparrot/pubsub-event-bus`).
 
 Once extended, implement methods required by `PubsubEvent`:
 
 `exchange` - the RabbitMQ exchange name (there is a list of predefined valid exchanges)
 
-Example of predefined event:
-
+So, assuming, the payload data model is:
 ```ts
-export class StoreCreated extends PubsubEvent<IStoreCreatedPayload> {
-    constructor(readonly data: IStoreCreatedPayload) {
-        super();
-    }
-
-    exchange = (): PubsubPlatformExchangeEnum => PubsubPlatformExchangeEnum.PLATFORM_STORE_V2;
+export interface IStoreCreatedPayload {
+    storeId: string;
 }
 ```
 
-## Listen for events
+We're gonna create a new event class:
+```ts
+export class StoreCreated extends PubsubEvent<IStoreCreatedPayload> {
+    exchange = (): string => 'store';
+}
+```
+
+### Publish event
+
+Inject `EventBus` into your service/controller in order to emit the event.
+
+```ts
+class SomeService {
+    constructor(private readonly eventBus: EventBus) {}
+
+    doCoolStuff() {
+        // create item
+
+        this.eventBus.publish(new ItemCreated({ storeId }));
+
+        // return item    
+    }
+}
+```
+
+## Consuming events
 
 ### Create event handler
 
@@ -77,9 +91,7 @@ export class StoreCreatedHandler extends PubsubHandler implements IEventHandler 
         console.log(`[${this.constructor.name}] ->`, event.payload());
     }
 
-    exchange(): PubsubPlatformExchangeEnum {
-        return PubsubPlatformExchangeEnum.PLATFORM_STORE_V2;
-    }
+    exchange = (): string => 'store';
 }
 ```
 
@@ -96,6 +108,14 @@ or it may be listening for all events in desired exchange ("#" - fanout), just a
 ```ts
 @PubsubEventHandler(Fanout)
 ```
+
+[Note] EventBus pushes the message through the NestJS EventBus and through the RabbitMQ.
+That means that this handler is still perfectly compatible with NestJs event handler, so it can be used by the same service which produces the event.
+
+MicroService 1 -> Produces Event 
+MicroService 2 <- Consumes Event
+MicroService 3 <- Consumes Event
+MicroService 1 <- Consumes Event (just use default `@EventHandler` decorator and there is no need to extend `PubsubHandler` class)!
 
 ### Implement required methods:
 
@@ -137,7 +157,7 @@ Also, you can define a very specific events, it will be listening for, by declar
 
 ```ts
 @PubsubEventHandler(StoreCreated)
-export class StoreCreatedHandler extends Consumer implements IEventHandler {
+export class StoreCreatedHandler extends PubsubHandler implements IEventHandler<StoreCreated> {
     withQueueConfig = (): Options.AssertQueue => ({
         exclusive: true,
         durable: false,
@@ -146,9 +166,4 @@ export class StoreCreatedHandler extends Consumer implements IEventHandler {
 }
 ```
 
-### TODO
-1. test it in production, before releasing in public (releasing raw solution is not a good way)
-2. add more documentation about configuration (library, module, producer, consumer).
-3. add unit tests
-4. prepare public release: configure github pipeline, add contribution policy, bug reports, license, etc...
-5. perform public release: write Medium article, social share, etc...
+## Enjoy!
