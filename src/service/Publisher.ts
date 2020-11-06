@@ -11,10 +11,11 @@ export class Publisher<EventBase extends IEvent> extends DefaultPubSub<EventBase
     }
 
     async publish<T extends EventBase>(event: T): Promise<void> {
-        super.publish(event);
-
         if (event instanceof PubsubEvent) {
-            await this.producer.produce(toEventName(event.constructor.name), event.payload(), event.exchange(), event.getOptions());
+            event.localEventEnabled() && super.publish(event);
+            return this.producer.produce(toEventName(event.constructor.name), event.payload(), event.exchange(), event.getOptions());
         }
+
+        return super.publish(event);
     }
 }

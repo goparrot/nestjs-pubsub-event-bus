@@ -1,4 +1,4 @@
-import { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
+import { ConfirmChannel, ConsumeMessage, Message } from 'amqplib';
 import { toEventName, toSnakeCase } from '../utils';
 import { BindingQueueOptions } from '../interface';
 import { ConfigProvider } from '../provider';
@@ -25,24 +25,22 @@ export class Consumer extends PubsubManager {
         await this.channel(
             exchange,
             async (channel: ConfirmChannel): Promise<void> => {
-                try {
-                    const queueName: string = this.queue(exchange);
-                    const rabbitQueue: Replies.AssertQueue = await channel.assertQueue(queueName, this.bindingOptions(bindingOptions));
-                    this.listenFor(events).map(async (event: string): Promise<any> => await channel.bindQueue(rabbitQueue.queue, exchange, event));
+                const queueName: string = this.queue(exchange);
 
-                    this.logger().log(`Listening for "${this.listenFor(events).toString()}" events from [${exchange} <- ${queueName}]`);
-                    await channel.consume(rabbitQueue.queue, (msg: ConsumeMessage | null) => {
+                this.logger().log(`Listening for "${this.listenFor(events).toString()}" events from [${exchange} <- ${queueName}]`);
+                await Promise.all([
+                    channel.assertQueue(queueName, this.bindingOptions(bindingOptions)),
+                    ...this.listenFor(events).map(async (event: string): Promise<any> => await channel.bindQueue(queueName, exchange, event)),
+                    channel.consume(queueName, (msg: ConsumeMessage | null) => {
                         try {
                             onMessage(msg);
                             channel.ack(msg as Message);
                         } catch (e) {
                             // @tbd retry??? if so, retry mechanism maybe based on headers values...
-                            this.logger().warn(`Message acknowledge error: [${(e as Error).message}]`);
+                            this.logger().warn(`Message execution/acknowledge error: [${(e as Error).message}]`);
                         }
-                    });
-                } catch (e) {
-                    this.logger().warn(`Error listening: [${(e as Error).message}]`);
-                }
+                    }),
+                ]);
             },
         );
     }
