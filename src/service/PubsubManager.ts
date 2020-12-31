@@ -1,6 +1,6 @@
 import * as RabbitManager from 'amqp-connection-manager';
 import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
-import { ConfirmChannel, Connection } from 'amqplib';
+import { ConfirmChannel } from 'amqplib';
 import { LoggerService, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
 import { ExchangeOptions } from '../interface';
@@ -20,7 +20,7 @@ export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
             heartbeatIntervalInSeconds: 5,
             reconnectTimeInSeconds: 5,
         })
-            .on('connect', ({ url }: { connection: Connection; url: string }) => void this.logger().log(`Amqp connection established`, url))
+            .on('connect', () => void this.logger().log(`Amqp connection established`))
             .on('disconnect', (arg: { err: Error }) => void this.logger().error(arg.err.message));
 
         this.channelWrapper$ = this.connection$
