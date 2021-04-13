@@ -1,25 +1,25 @@
 ### TODO
 
--   [x] eslint
--   [x] commitlint
--   [ ] unit tests:
-    -   [x] jest setup
-    -   [x] utils
-    -   [ ] services
-    -   [ ] producer
-    -   [ ] consumer
-    -   [ ] providers
--   [ ] work more on the documentation:
-    -   [ ] cover the basics
-    -   [ ] cover configuration topic (library, module, producer, consumer).
-    -   [ ] legacy usage
--   [ ] test in production, before releasing in public (releasing raw solution is not a good idea)
--   [ ] prepare public release:
-    -   [ ] configure github pipeline, CI
-    -   [ ] github releases automation
-    -   [x] contribution policy
-    -   [x] setup github workflow
-    -   [x] license
--   [ ] perform public release
-    -   [ ] write Medium article
-    -   [ ] social sharing
+- [x] eslint
+- [x] commitlint
+- [ ] unit tests:
+  - [x] jest setup
+  - [x] utils
+  - [ ] services
+  - [ ] producer
+  - [ ] consumer
+  - [ ] providers
+- [ ] work more on the documentation:
+  - [ ] cover the basics
+  - [ ] cover configuration topic (library, module, producer, consumer).
+  - [ ] legacy usage
+- [ ] test in production, before releasing in public (releasing raw solution is not a good idea)
+- [ ] prepare public release:
+  - [ ] configure github pipeline, CI
+  - [ ] github releases automation
+  - [x] contribution policy
+  - [x] setup github workflow
+  - [x] license
+- [ ] perform public release
+  - [ ] write Medium article
+  - [ ] social sharing

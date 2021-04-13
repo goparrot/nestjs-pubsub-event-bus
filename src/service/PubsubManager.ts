@@ -1,9 +1,9 @@
+import type { LoggerService, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import type { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import * as RabbitManager from 'amqp-connection-manager';
-import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
-import { ConfirmChannel } from 'amqplib';
-import { LoggerService, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import type { ConfirmChannel } from 'amqplib';
+import type { ExchangeOptions } from '../interface';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
-import { ExchangeOptions } from '../interface';
 
 /**
  * Review the work with connections & channels, according to these recommendations.
@@ -12,6 +12,8 @@ import { ExchangeOptions } from '../interface';
 export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
     protected connection$: AmqpConnectionManager;
     protected channelWrapper$: ChannelWrapper;
+
+    async setupChannel(_channel: ConfirmChannel): Promise<void> {}
 
     async onModuleInit(): Promise<void> {
         if (this.appInTestingMode()) return;
@@ -24,7 +26,7 @@ export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
             .on('disconnect', (arg: { err: Error }) => void this.logger().error(arg.err.message));
 
         this.channelWrapper$ = this.connection$
-            .createChannel({ json: true })
+            .createChannel({ json: true, setup: this.setupChannel.bind(this) })
             .on('connect', () => void this.logger().log(`Amqp channel created`))
             .on('error', (err: Error, { name }: { name: string }) => void this.logger().error(`Amqp channel error: ${err.message}`, err.stack, name))
             .on('close', () => void this.logger().log(`Amqp channel closes`));
@@ -39,22 +41,6 @@ export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
         return LoggerProvider.logger;
     }
 
-    protected async channel(exchange: string, onExchangeCreated?: (channel: ConfirmChannel) => unknown): Promise<void> {
-        void this.connection$
-            .createChannel({
-                json: true,
-                setup: async (channel: ConfirmChannel): Promise<any> =>
-                    Promise.all([
-                        channel.assertExchange(exchange, 'topic', this.exchangeOptions()),
-                        ...(onExchangeCreated ? [onExchangeCreated(channel)] : []),
-                    ]),
-            })
-            .waitForConnect()
-            .then((): void => void this.logger().log(`Listening for "${exchange}" messages`));
-
-        return;
-    }
-
     protected exchangeOptions(extra: ExchangeOptions = {}): ExchangeOptions {
         return {
             ...ConfigProvider.exchange,
@@ -62,5 +48,5 @@ export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
         };
     }
 
-    private appInTestingMode = (): boolean => 'test' === process.env.NODE_ENV!;
+    protected appInTestingMode = (): boolean => process.env.NODE_ENV! === 'test';
 }

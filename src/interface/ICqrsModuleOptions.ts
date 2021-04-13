@@ -1,11 +1,13 @@
-import { LoggerService } from '@nestjs/common';
-import { PublishOptions } from './PublishOptions';
-import { BindingQueueOptions } from './BindingQueueOptions';
-import { PubsubExchangeType } from './PubsubExchangeType';
-import { ExchangeOptions } from './ExchangeOptions';
+import type { LoggerService } from '@nestjs/common';
+import type { BindingQueueOptions } from './BindingQueueOptions';
+import type { ExchangeOptions } from './ExchangeOptions';
+import type { IConsumerOptions } from './IConsumerOptions';
+import type { PublishOptions } from './PublishOptions';
+import type { PubsubExchangeType } from './PubsubExchangeType';
 
 interface ICqrsModuleOptionsConfig {
     exchange?: ExchangeOptions;
+    consumer?: IConsumerOptions;
     producer?: PublishOptions;
     bindings?: BindingQueueOptions;
 }

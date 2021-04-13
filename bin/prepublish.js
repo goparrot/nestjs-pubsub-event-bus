@@ -1,6 +1,5 @@
 const fs = require('fs');
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { scripts, dependencies, devDependencies, husky, files, 'lint-staged': lintStaged, directories, config, ...packageJson } = require('../package.json');
 packageJson.main = './index.js';
 packageJson.types = './index.d.ts';

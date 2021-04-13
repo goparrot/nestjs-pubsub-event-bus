@@ -1,10 +1,9 @@
 ---
 name: 🤔 Question
 about: Get help using PubsubEventPus
-title: 'question: '
+title: "question: "
 labels: question
-assignees: ''
-
+assignees: ""
 ---
 
 <!-- Click "Preview" for a more readable version --
@@ -20,8 +19,8 @@ Please read and follow the instructions before submitting an issue:
 
 ## Environment:
 
-*   PubsubEventBus Version: x.y.z
-*   Node version: x.y.z
+- PubsubEventBus Version: x.y.z
+- Node version: x.y.z
 
 ## Describe the issue
 

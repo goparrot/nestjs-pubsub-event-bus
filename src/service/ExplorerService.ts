@@ -1,7 +1,8 @@
-import { Injectable, Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ExplorerService as NestExplorerService } from '@nestjs/cqrs/dist/services/explorer.service';
 import { ModulesContainer } from '@nestjs/core';
-import { IEvent, IEventHandler } from '@nestjs/cqrs';
+import type { IEvent, IEventHandler } from '@nestjs/cqrs';
 import { PUBSUB_EVENT_HANDLER_METADATA } from '../decorator';
 
 @Injectable()
