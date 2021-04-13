@@ -1,4 +1,4 @@
-import { PublishOptions } from '../interface';
+import type { PublishOptions } from '../interface';
 import { ConfigProvider } from '../provider';
 import { PubsubManager } from './PubsubManager';
 

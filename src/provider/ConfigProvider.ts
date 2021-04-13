@@ -1,4 +1,4 @@
-import { BindingQueueOptions, ExchangeOptions, ICqrsModuleOptions, PublishOptions, PubsubExchangeType } from '../interface';
+import type { BindingQueueOptions, ExchangeOptions, ICqrsModuleOptions, PublishOptions, PubsubExchangeType } from '../interface';
 import {
     DEFAULT_EXCHANGE_CONFIGURATION,
     DEFAULT_EXCHANGE_TYPE,

@@ -11,7 +11,7 @@ import startCase from 'lodash/startCase';
 export const toEventName = (className: string): string => {
     className = snakeCase(className.replace(/Event$/, '')).replace(/_/gi, '.');
 
-    if ('fanout' === className) {
+    if (className === 'fanout') {
         return '#';
     }
 
@@ -36,7 +36,7 @@ export const toEventClassName = (event: string): string => {
  * @param className
  */
 export const toSnakeCase = (className: string | Record<string, unknown>): string => {
-    if ('object' === typeof className) {
+    if (typeof className === 'object') {
         className = className.constructor.name;
     }
 

@@ -1,9 +1,9 @@
-import { IEvent } from '@nestjs/cqrs';
+import type { IEvent } from '@nestjs/cqrs';
 import { DefaultPubSub } from '@nestjs/cqrs/dist/helpers/default-pubsub';
-import { Subject } from 'rxjs';
+import type { Subject } from 'rxjs';
 import { toEventName } from '../utils';
 import { PubsubEvent } from '../interface';
-import { Producer } from './Producer';
+import type { Producer } from './Producer';
 
 export class Publisher<EventBase extends IEvent> extends DefaultPubSub<EventBase> {
     constructor(subject$: Subject<EventBase>, readonly producer: Producer) {

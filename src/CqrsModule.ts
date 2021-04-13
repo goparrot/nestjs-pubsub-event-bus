@@ -1,16 +1,18 @@
-import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
-import { DynamicModule, Logger, Module } from '@nestjs/common';
+import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { CommandBus, Consumer, EventBus, ExplorerService, Producer, Publisher, QueryBus } from './service';
-import { ICqrsModuleOptions } from './interface';
+import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
+import type { ICqrsModuleOptions } from './interface';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
+import { CommandBus, Consumer, EventBus, ExplorerService, Producer, Publisher, QueryBus } from './service';
+import { CONSUMER_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
 
 @Module({
     imports: [NestCqrsModule],
-    providers: [ExplorerService, Publisher, CommandBus, QueryBus, EventBus],
-    exports: [EventBus, CommandBus, QueryBus],
+    providers: [ExplorerService, Publisher, CommandBus, QueryBus, EventBus, Producer, Consumer],
+    exports: [EventBus, CommandBus, QueryBus, Producer, Consumer],
 })
-export class CqrsModule {
+export class CqrsModule implements OnApplicationBootstrap {
     constructor(
         private readonly explorerService: ExplorerService,
         private readonly eventsBus: EventBus,
@@ -36,21 +38,23 @@ export class CqrsModule {
                     provide: ConfigProvider,
                     useValue: ConfigProvider.fromOptions(options),
                 },
-                Producer,
-                Consumer,
+                {
+                    provide: CONSUMER_OPTIONS,
+                    useValue: { ...DEFAULT_CONSUMER_OPTIONS, ...options?.config?.consumer },
+                },
             ],
-            exports: [Producer, Consumer],
         };
     }
 
-    onApplicationBootstrap(): void {
+    async onApplicationBootstrap(): Promise<void> {
         const { events, queries, sagas, commands } = this.explorerService.explore();
+
         this.commandsBus.register(commands);
         this.queryBus.register(queries);
         this.eventsBus.registerSagas(sagas);
         this.eventsBus.register(events);
 
         this.eventsBus.publisher = new Publisher(this.eventsBus.subject$, this.moduleRef.get(Producer));
-        this.eventsBus.registerPubsubEvents(this.explorerService.pubsubEvents());
+        await this.eventsBus.registerPubsubEvents(this.explorerService.pubsubEvents());
     }
 }

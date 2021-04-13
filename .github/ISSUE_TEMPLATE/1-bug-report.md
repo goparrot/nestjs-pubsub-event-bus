@@ -1,10 +1,9 @@
 ---
 name: 🐞 Bug Report
 about: Report a reproducible bug
-title: ''
-labels: ''
+title: ""
+labels: ""
 assignees: endihunter
-
 ---
 
 <!-- Click "Preview" for a more readable version --
@@ -37,8 +36,8 @@ Please read and follow the instructions before submitting an issue:
 
 ## Environment:
 
-*   PubsubEventBus Version: x.y.z
-*   Node version: x.y.z
+- PubsubEventBus Version: x.y.z
+- Node version: x.y.z
 
 ## Additional context/Screenshots
 

@@ -1,10 +1,9 @@
 ---
 name: ✨ Feature Request
 about: Suggest an idea or feature
-title: 'feat: '
+title: "feat: "
 labels: feature
 assignees: endihunter
-
 ---
 
 ## Issue Number: [N/A]
