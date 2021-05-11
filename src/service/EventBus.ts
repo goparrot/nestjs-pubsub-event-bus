@@ -1,16 +1,16 @@
-import type { LoggerService, Type } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { EventHandlerType, IEvent, IEventHandler } from '@nestjs/cqrs';
 import { EventBus as NestEventBus } from '@nestjs/cqrs';
-import type { ConsumeMessage } from 'amqplib';
-import { PUBSUB_EVENT_HANDLER_METADATA } from '../decorator';
-import type { IPubsubEventHandlerMetadata, PubsubEvent, PubsubHandler } from '../interface';
+import { PUBSUB_EVENT_HANDLER_METADATA, PUBSUB_EVENT_NAME } from '../decorator';
 import { AutoAckEnum } from '../interface';
 import { LoggerProvider } from '../provider';
 import { toEventClassName, toEventName } from '../utils';
 import { CommandBus } from './CommandBus';
 import { Consumer } from './Consumer';
+import type { IPubsubEventHandlerMetadata, PubsubEvent, PubsubHandler } from '../interface';
+import type { ConsumeMessage } from 'amqplib';
+import type { EventHandlerType, IEvent, IEventHandler } from '@nestjs/cqrs';
+import type { LoggerService, Type } from '@nestjs/common';
 
 @Injectable()
 export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
@@ -25,7 +25,9 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
             this.consumer.configureAutoAck(handler, autoAck);
             this.registerPubsubHandler(handler, events);
 
-            const eventNames: string[] = events.map((event: Type<PubsubEvent<any>>): string => toEventName(event.name));
+            const eventNames: string[] = events.map((event: Type<PubsubEvent<any>>): string => {
+                return Reflect.getMetadata(PUBSUB_EVENT_NAME, event) ?? toEventName(event.name);
+            });
 
             await this.bindPubsubConsumer(handler, eventNames);
         }
@@ -68,7 +70,9 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
 
         const { events }: IPubsubEventHandlerMetadata = this.reflectPubsubMetadata(handler);
 
-        const instance: Type<PubsubEvent<any>> | undefined = events.find((eventClass: Type<PubsubEvent<any>>) => eventClassName === eventClass.name);
+        const instance: Type<PubsubEvent<any>> | undefined = events.find((eventClass: Type<PubsubEvent<any>>) => {
+            return eventClassName === eventClass.name || Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass) === message.properties.type;
+        });
         if (!instance) {
             return;
         }

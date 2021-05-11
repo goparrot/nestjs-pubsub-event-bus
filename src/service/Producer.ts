@@ -1,6 +1,6 @@
-import type { PublishOptions } from '../interface';
 import { ConfigProvider } from '../provider';
 import { PubsubManager } from './PubsubManager';
+import type { PublishOptions } from '../interface';
 
 export class Producer extends PubsubManager {
     /**

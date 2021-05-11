@@ -1,14 +1,14 @@
-import type { LoggerService, Type } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
-import type { IEventHandler } from '@nestjs/cqrs';
-import type { ChannelWrapper } from 'amqp-connection-manager';
-import type { ConfirmChannel, ConsumeMessage, Message } from 'amqplib';
-import type { BindingQueueOptions, PubsubEvent } from '../interface';
 import { AutoAckEnum, IConsumerOptions, PubsubHandler } from '../interface';
 import { ConfigProvider } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CONSUMER_OPTIONS } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
+import type { BindingQueueOptions, PubsubEvent } from '../interface';
+import type { ConfirmChannel, ConsumeMessage, Message } from 'amqplib';
+import type { ChannelWrapper } from 'amqp-connection-manager';
+import type { IEventHandler } from '@nestjs/cqrs';
+import type { LoggerService, Type } from '@nestjs/common';
 
 export class Consumer extends PubsubManager {
     protected name: string;
