@@ -1,9 +1,9 @@
+import * as RabbitManager from 'amqp-connection-manager';
+import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
 import type { LoggerService, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import type { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
-import * as RabbitManager from 'amqp-connection-manager';
 import type { ConfirmChannel } from 'amqplib';
 import type { ExchangeOptions } from '../interface';
-import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
 
 /**
  * Review the work with connections & channels, according to these recommendations.

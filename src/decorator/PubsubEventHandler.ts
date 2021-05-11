@@ -1,7 +1,7 @@
+import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 import type { Type } from '@nestjs/common';
 import 'reflect-metadata';
 import type { AutoAckEnum, PubsubEvent } from '../interface';
-import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 
 export interface IPubsubEventHandlerOptions {
     /**

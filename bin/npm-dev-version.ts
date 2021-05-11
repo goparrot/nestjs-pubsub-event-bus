@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import { readFileSync, writeFileSync } from 'fs';
+import { EOL } from 'os';
 import parseArgs from 'minimist';
 import { SemVer } from 'semver';
 
@@ -40,5 +41,5 @@ void (async (): Promise<void> => {
     console.log('Output data', { packageJsonPath, branchName, ticketNumber, version: semVer.format() });
 
     packageJson.version = semVer.format();
-    writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 4));
+    writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 4) + EOL);
 })();

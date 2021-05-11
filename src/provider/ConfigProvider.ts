@@ -1,10 +1,10 @@
-import type { BindingQueueOptions, ExchangeOptions, ICqrsModuleOptions, PublishOptions, PubsubExchangeType } from '../interface';
 import {
     DEFAULT_EXCHANGE_CONFIGURATION,
     DEFAULT_EXCHANGE_TYPE,
     DEFAULT_PRODUCER_CONFIGURATION,
     DEFAULT_QUEUE_BINDING_CONFIGURATION,
 } from '../utils/configuration';
+import type { BindingQueueOptions, ExchangeOptions, ICqrsModuleOptions, PublishOptions, PubsubExchangeType } from '../interface';
 
 export class ConfigProvider {
     static exchange: ExchangeOptions;
