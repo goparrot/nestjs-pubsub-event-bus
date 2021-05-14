@@ -100,7 +100,7 @@
         "husky": "^4.2.5",
         "jest": "26.1.0",
         "lint-staged": "^10.5.4",
-        "lodash": "4.17.15",
+        "lodash": "4.17.21",
         "minimist": "1.2.5",
         "prettier": "^2.2.1",
         "reflect-metadata": "0.1.13",
@@ -119,7 +119,7 @@
         "amqp-connection-manager": ">=3.2",
         "amqplib": ">=0.5",
         "reflect-metadata": ">=0.1",
-        "lodash": ">=4.*"
+        "lodash": ">=4.17.21"
     },
     "dependencies": {}
 }
