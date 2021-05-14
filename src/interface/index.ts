@@ -8,3 +8,4 @@ export * from './ICqrsModuleOptions';
 export * from './PubsubExchangeType';
 export * from './BindingQueueOptions';
 export * from './IPubsubEventHandlerMetadata';
+export * from './ICqrsModuleAsyncOptions';

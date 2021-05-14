@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { AutoAckEnum, IConsumerOptions, PubsubHandler } from '../interface';
 import { ConfigProvider } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
-import { CONSUMER_OPTIONS } from '../utils/configuration';
+import { CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
 import type { BindingQueueOptions, PubsubEvent } from '../interface';
 import type { ConfirmChannel, ConsumeMessage, Message } from 'amqplib';
@@ -13,7 +13,7 @@ import type { LoggerService, Type } from '@nestjs/common';
 export class Consumer extends PubsubManager {
     protected name: string;
 
-    constructor(@Inject(CONSUMER_OPTIONS) protected readonly options: IConsumerOptions) {
+    constructor(@Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions) {
         super();
     }
 

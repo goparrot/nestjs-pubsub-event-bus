@@ -3,13 +3,41 @@ import { ModuleRef } from '@nestjs/core';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, Publisher, QueryBus } from './service';
-import { CONSUMER_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
-import type { ICqrsModuleOptions } from './interface';
+import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
 import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
+import type { ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
 
 @Module({
     imports: [NestCqrsModule],
-    providers: [ExplorerService, Publisher, CommandBus, QueryBus, EventBus, Producer, Consumer],
+    providers: [
+        ExplorerService,
+        Publisher,
+        CommandBus,
+        QueryBus,
+        EventBus,
+        Producer,
+        Consumer,
+        {
+            provide: ConnectionProvider,
+            useFactory: (options: ICqrsModuleOptions): ConnectionProvider => ConnectionProvider.forHosts(options.connections),
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: LoggerProvider,
+            useFactory: (options: ICqrsModuleOptions): LoggerProvider => LoggerProvider.forLogger(options.logger || new Logger()),
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: ConfigProvider,
+            useFactory: (options: ICqrsModuleOptions): ConfigProvider => ConfigProvider.fromOptions(options),
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: CQRS_MODULE_CONSUMER_OPTIONS,
+            useFactory: (options: ICqrsModuleOptions): unknown => ({ ...DEFAULT_CONSUMER_OPTIONS, ...options?.config?.consumer }),
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+    ],
     exports: [EventBus, CommandBus, QueryBus, Producer, Consumer],
 })
 export class CqrsModule implements OnApplicationBootstrap {
@@ -27,20 +55,22 @@ export class CqrsModule implements OnApplicationBootstrap {
             global: options.isGlobal,
             providers: [
                 {
-                    provide: ConnectionProvider,
-                    useValue: ConnectionProvider.forHosts(options.connections),
+                    provide: CQRS_MODULE_OPTIONS,
+                    useValue: options,
                 },
+            ],
+        };
+    }
+
+    static forRootAsync(options: ICqrsModuleAsyncOptions): DynamicModule {
+        return {
+            module: CqrsModule,
+            imports: options.imports,
+            providers: [
                 {
-                    provide: LoggerProvider,
-                    useValue: LoggerProvider.forLogger(options.logger || new Logger()),
-                },
-                {
-                    provide: ConfigProvider,
-                    useValue: ConfigProvider.fromOptions(options),
-                },
-                {
-                    provide: CONSUMER_OPTIONS,
-                    useValue: { ...DEFAULT_CONSUMER_OPTIONS, ...options?.config?.consumer },
+                    provide: CQRS_MODULE_OPTIONS,
+                    useFactory: options.useFactory,
+                    inject: options.inject || [],
                 },
             ],
         };

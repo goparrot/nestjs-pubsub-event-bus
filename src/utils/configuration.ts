@@ -1,7 +1,8 @@
 import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, PublishOptions, PubsubExchangeType } from '../interface';
 
 export const DEFAULT_EXCHANGE_TYPE: PubsubExchangeType = 'topic';
-export const CONSUMER_OPTIONS: string = 'CONSUMER_OPTIONS';
+export const CQRS_MODULE_CONSUMER_OPTIONS: string = 'CQRS_MODULE_CONSUMER_OPTIONS';
+export const CQRS_MODULE_OPTIONS: string = 'CQRS_MODULE_OPTIONS';
 
 export const DEFAULT_EXCHANGE_CONFIGURATION: ExchangeOptions = {
     durable: true,
