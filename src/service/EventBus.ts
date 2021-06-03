@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { EventBus as NestEventBus } from '@nestjs/cqrs';
+import type { EventHandlerType, IEvent, IEventHandler } from '@nestjs/cqrs';
+import type { LoggerService, Type } from '@nestjs/common';
+import type { ConsumeMessage } from 'amqplib';
 import { PUBSUB_EVENT_HANDLER_METADATA, PUBSUB_EVENT_NAME } from '../decorator';
 import { AutoAckEnum } from '../interface';
 import { LoggerProvider } from '../provider';
 import { toEventClassName, toEventName } from '../utils';
+import type { IPubsubEventHandlerMetadata, PubsubEvent, PubsubHandler } from '../interface';
 import { CommandBus } from './CommandBus';
 import { Consumer } from './Consumer';
-import type { IPubsubEventHandlerMetadata, PubsubEvent, PubsubHandler } from '../interface';
-import type { ConsumeMessage } from 'amqplib';
-import type { EventHandlerType, IEvent, IEventHandler } from '@nestjs/cqrs';
-import type { LoggerService, Type } from '@nestjs/common';
 
 @Injectable()
 export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
@@ -26,7 +26,8 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
             this.registerPubsubHandler(handler, events);
 
             const eventNames: string[] = events.map((event: Type<PubsubEvent<any>>): string => {
-                return Reflect.getMetadata(PUBSUB_EVENT_NAME, event) ?? toEventName(event.name);
+                const routingKey: string = Reflect.getMetadata(PUBSUB_EVENT_NAME, event) ?? toEventName(event.name);
+                return routingKey === 'Fanout' ? '#' : routingKey;
             });
 
             await this.bindPubsubConsumer(handler, eventNames);
@@ -71,7 +72,11 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
         const { events }: IPubsubEventHandlerMetadata = this.reflectPubsubMetadata(handler);
 
         const instance: Type<PubsubEvent<any>> | undefined = events.find((eventClass: Type<PubsubEvent<any>>) => {
-            return eventClassName === eventClass.name || Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass) === message.properties.type;
+            return (
+                eventClassName === eventClass.name ||
+                Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass) === message.properties.type ||
+                ['#', 'Fanout'].includes(Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass))
+            );
         });
         if (!instance) {
             return;
