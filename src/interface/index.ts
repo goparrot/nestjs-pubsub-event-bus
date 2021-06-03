@@ -7,5 +7,6 @@ export * from './IConsumerOptions';
 export * from './ICqrsModuleOptions';
 export * from './PubsubExchangeType';
 export * from './BindingQueueOptions';
-export * from './IPubsubEventHandlerMetadata';
+export * from './PubsubEventListener';
 export * from './ICqrsModuleAsyncOptions';
+export * from './IPubsubEventHandlerMetadata';

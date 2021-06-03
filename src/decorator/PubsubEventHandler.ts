@@ -1,7 +1,7 @@
-import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 import type { Type } from '@nestjs/common';
 import 'reflect-metadata';
-import type { AutoAckEnum, PubsubEvent } from '../interface';
+import type { AutoAckEnum, PubsubEventListener } from '../interface';
+import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 
 export interface IPubsubEventHandlerOptions {
     /**
@@ -11,16 +11,16 @@ export interface IPubsubEventHandlerOptions {
     autoAck?: AutoAckEnum;
 }
 
-export type EventsWithOptions = [...Type<PubsubEvent<any>>[], IPubsubEventHandlerOptions];
+export type EventsWithOptions = [...Type<PubsubEventListener<any>>[], IPubsubEventHandlerOptions];
 
 export function PubsubEventHandler(...params: EventsWithOptions);
-export function PubsubEventHandler(...events: Type<PubsubEvent<any>>[]);
+export function PubsubEventHandler(...events: Type<PubsubEventListener<any>>[]);
 
-export function PubsubEventHandler(...params: Type<PubsubEvent<any>>[] | EventsWithOptions): ClassDecorator {
+export function PubsubEventHandler(...params: Type<PubsubEventListener<any>>[] | EventsWithOptions): ClassDecorator {
     if (!params.length) {
         return Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, { events: [] });
     }
-    const optionsOrEvent: IPubsubEventHandlerOptions | Type<PubsubEvent<any>> = params[params.length - 1];
+    const optionsOrEvent: IPubsubEventHandlerOptions | Type<PubsubEventListener<any>> = params[params.length - 1];
 
     if (typeof optionsOrEvent === 'object') {
         return Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, {

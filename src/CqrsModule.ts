@@ -1,10 +1,10 @@
 import { Logger, Module } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
+import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, Publisher, QueryBus } from './service';
 import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
-import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import type { ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
 
 @Module({
