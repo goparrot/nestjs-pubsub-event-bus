@@ -19,7 +19,7 @@ void (async (): Promise<void> => {
     const { version } = packageJson;
     const branchName: string = getCurrentGitBranch();
 
-    const ticketNumber: string | undefined = /^(feature|feat|hotifx|fix)\/(\d+)/gim.exec(branchName)?.[0]?.split('/').pop();
+    const ticketNumber: string | undefined = /^(feature|feat|hotfix|fix)\/(\d+)/gim.exec(branchName)?.[0]?.split('/').pop();
     const semVer: SemVer = new SemVer(version);
 
     if (!semVer) {

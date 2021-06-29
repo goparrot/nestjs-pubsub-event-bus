@@ -1,14 +1,14 @@
+import type { LoggerService, Type } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { EventBus as NestEventBus } from '@nestjs/cqrs';
 import type { EventHandlerType, IEvent, IEventHandler } from '@nestjs/cqrs';
-import type { LoggerService, Type } from '@nestjs/common';
+import { EventBus as NestEventBus } from '@nestjs/cqrs';
 import type { ConsumeMessage } from 'amqplib';
 import { PUBSUB_EVENT_HANDLER_METADATA, PUBSUB_EVENT_NAME } from '../decorator';
+import type { IPubsubEventHandlerMetadata, PubsubEvent, PubsubHandler } from '../interface';
 import { AutoAckEnum } from '../interface';
 import { LoggerProvider } from '../provider';
 import { toEventClassName, toEventName } from '../utils';
-import type { IPubsubEventHandlerMetadata, PubsubEvent, PubsubHandler } from '../interface';
 import { CommandBus } from './CommandBus';
 import { Consumer } from './Consumer';
 
@@ -38,9 +38,10 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
         return LoggerProvider.logger;
     }
 
-    protected registerPubsubHandler(handler: PubsubHandler | EventHandlerType<EventBase>, events: Type<PubsubEvent<any>>[]): void {
-        const instance: IEventHandler<EventBase> = this.moduleRefs.get(handler as EventHandlerType<EventBase>, { strict: false });
+    protected registerPubsubHandler(handler: EventHandlerType<EventBase>, events: Type<PubsubEvent<any>>[]): void {
+        const instance: IEventHandler<EventBase> = this.moduleRefs.get(handler, { strict: false });
         if (!instance) {
+            this.logger().warn('Could not get event handler instance', JSON.stringify({ name: handler.name }));
             return;
         }
 
@@ -50,6 +51,7 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
     protected async bindPubsubConsumer(handler: EventHandlerType<EventBase>, events: string[]): Promise<void> {
         const handlerInstance: PubsubHandler = this.moduleRefs.get(handler, { strict: false });
         if (!handlerInstance) {
+            this.logger().warn('Could not get event handler instance', JSON.stringify({ name: handler.name }));
             return;
         }
 
@@ -67,19 +69,36 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
     }
 
     protected emitPubsubEvent = (handler: EventHandlerType<EventBase>, message: ConsumeMessage): void => {
-        const eventClassName: string = toEventClassName(message.properties.type);
-
         const { events }: IPubsubEventHandlerMetadata = this.reflectPubsubMetadata(handler);
 
-        const instance: Type<PubsubEvent<any>> | undefined = events.find((eventClass: Type<PubsubEvent<any>>) => {
-            return (
-                eventClassName === eventClass.name ||
+        const instances: Type<PubsubEvent<any>>[] = events.filter(
+            (eventClass: Type<PubsubEvent<any>>) =>
+                toEventClassName(message.properties.type) === eventClass.name ||
                 Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass) === message.properties.type ||
-                ['#', 'Fanout'].includes(Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass))
+                ['#', 'Fanout'].includes(Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass)),
+        );
+
+        const context: Record<string, unknown> = {
+            handler: handler.name,
+            type: message.properties.type,
+            events: events.map((event: Type<PubsubEvent<any>>) => ({
+                name: event.name,
+                pubsubEventName: Reflect.getMetadata(PUBSUB_EVENT_NAME, event),
+            })),
+        };
+
+        if (!instances.length) {
+            this.logger().warn(
+                'No event class matched. Possible reason: handler no longer listens for this type of messages, so queue should be unbinded',
+                JSON.stringify(context),
             );
-        });
-        if (!instance) {
+            this.consumer.ack(message);
             return;
+        }
+
+        const [instance, ...unused]: Type<PubsubEvent<any>>[] = instances;
+        if (unused.length) {
+            this.logger().warn("Handler's event intersection detected", JSON.stringify({ ...context, unused }));
         }
 
         const pubsubEvent: PubsubEvent<any> = new instance(JSON.parse(message?.content.toString())).withMessage(message);
