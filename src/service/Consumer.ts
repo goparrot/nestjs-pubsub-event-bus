@@ -1,13 +1,12 @@
-import { Inject } from '@nestjs/common';
-import type { ConfirmChannel, ConsumeMessage, Message } from 'amqplib';
-import type { ChannelWrapper } from 'amqp-connection-manager';
-import type { IEventHandler } from '@nestjs/cqrs';
 import type { LoggerService, Type } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import type { IEventHandler } from '@nestjs/cqrs';
+import type { ConfirmChannel, ConsumeMessage, Message } from 'amqplib';
+import type { BindingQueueOptions, PubsubEvent } from '../interface';
 import { AutoAckEnum, IConsumerOptions, PubsubHandler } from '../interface';
 import { ConfigProvider } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
-import type { BindingQueueOptions, PubsubEvent } from '../interface';
 import { PubsubManager } from './PubsubManager';
 
 export class Consumer extends PubsubManager {
@@ -77,6 +76,14 @@ export class Consumer extends PubsubManager {
         }
     }
 
+    ack(message: Message): void {
+        this.channelWrapper$.ack(message);
+    }
+
+    nack(message: Message): void {
+        this.channelWrapper$.nack(message);
+    }
+
     /**
      * Event, that consumer should listen for (Ex.: order.created, user.*, *.created, etc...)
      */
@@ -114,14 +121,15 @@ export class Consumer extends PubsubManager {
     }
 
     private implementAckAndNack(handler: Type<IEventHandler>): void {
-        const channel: ChannelWrapper = this.channelWrapper$;
+        const ack: (message: Message) => void = this.ack.bind(this);
+        const nack: (message: Message) => void = this.nack.bind(this);
 
         Reflect.defineProperty(handler.prototype, 'ack', {
             ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'ack'),
             value(event: PubsubEvent<any>): void {
                 const message: Message | undefined = event.message();
                 if (message) {
-                    channel.ack(message);
+                    ack(message);
                 }
             },
         });
@@ -131,7 +139,7 @@ export class Consumer extends PubsubManager {
             value(event: PubsubEvent<any>): void {
                 const message: Message | undefined = event.message();
                 if (message) {
-                    channel.nack(message);
+                    nack(message);
                 }
             },
         });
@@ -156,22 +164,18 @@ export class Consumer extends PubsubManager {
     }
 
     private addAlwaysPositiveAck(handler: Type<IEventHandler>): void {
-        const handleDescriptor: PropertyDescriptor | undefined = Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle');
-        if (!handleDescriptor) {
-            return;
-        }
-        const originalMethod = handleDescriptor.value as IEventHandler['handle'];
+        const ack: (message: Message) => void = this.ack.bind(this);
+        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
 
-        const channel: ChannelWrapper = this.channelWrapper$;
         Reflect.defineProperty(handler.prototype, 'handle', {
-            ...handleDescriptor,
+            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
             async value(event: PubsubEvent<any>): Promise<void> {
                 try {
                     await originalMethod.apply(this, [event]);
                 } finally {
                     const message: Message | undefined = event.message();
                     if (message) {
-                        channel.ack(message);
+                        ack(message);
                     }
                 }
             },
@@ -179,26 +183,23 @@ export class Consumer extends PubsubManager {
     }
 
     private addAutoAck(handler: Type<IEventHandler>): void {
-        const handleDescriptor: PropertyDescriptor | undefined = Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle');
-        if (!handleDescriptor) {
-            return;
-        }
-        const originalMethod = handleDescriptor.value as IEventHandler['handle'];
+        const ack: (message: Message) => void = this.ack.bind(this);
+        const nack: (message: Message) => void = this.nack.bind(this);
+        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
 
-        const channel: ChannelWrapper = this.channelWrapper$;
         Reflect.defineProperty(handler.prototype, 'handle', {
-            ...handleDescriptor,
+            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
             async value(event: PubsubEvent<any>): Promise<void> {
                 try {
                     await originalMethod.apply(this, [event]);
                     const message: Message | undefined = event.message();
                     if (message) {
-                        channel.ack(message);
+                        ack(message);
                     }
                 } catch (e) {
                     const message: Message | undefined = event.message();
                     if (message) {
-                        channel.nack(message);
+                        nack(message);
                     }
                     throw e;
                 }
