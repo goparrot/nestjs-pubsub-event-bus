@@ -18,6 +18,14 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
         super(commandBus, moduleRefs);
     }
 
+    async publish<T extends IEvent>(event: T): Promise<void> {
+        return super.publish(event);
+    }
+
+    async publishAll<T extends IEvent>(events: T[]): Promise<void> {
+        return super.publishAll(events);
+    }
+
     async registerPubsubEvents(handlers: EventHandlerType<EventBase>[] = []): Promise<void> {
         for (const handler of handlers) {
             const { events, autoAck = AutoAckEnum.ALWAYS_ACK }: IPubsubEventHandlerMetadata = this.reflectPubsubMetadata(handler);
@@ -70,10 +78,11 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
 
     protected emitPubsubEvent = (handler: EventHandlerType<EventBase>, message: ConsumeMessage): void => {
         const { events }: IPubsubEventHandlerMetadata = this.reflectPubsubMetadata(handler);
+        const eventClassName: string = toEventClassName(message.properties.type);
 
-        const instances: Type<PubsubEvent<any>>[] = events.filter(
+        const eventClasses: Type<PubsubEvent<any>>[] = events.filter(
             (eventClass: Type<PubsubEvent<any>>) =>
-                toEventClassName(message.properties.type) === eventClass.name ||
+                eventClassName === eventClass.name ||
                 Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass) === message.properties.type ||
                 ['#', 'Fanout'].includes(Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass)),
         );
@@ -81,13 +90,13 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
         const context: Record<string, unknown> = {
             handler: handler.name,
             type: message.properties.type,
-            events: events.map((event: Type<PubsubEvent<any>>) => ({
-                name: event.name,
-                pubsubEventName: Reflect.getMetadata(PUBSUB_EVENT_NAME, event),
+            events: events.map((eventClass: Type<PubsubEvent<any>>) => ({
+                name: eventClass.name,
+                pubsubEventName: Reflect.getMetadata(PUBSUB_EVENT_NAME, eventClass),
             })),
         };
 
-        if (!instances.length) {
+        if (!eventClasses.length) {
             this.logger().warn(
                 'No event class matched. Possible reason: handler no longer listens for this type of message, so queue should be unbound',
                 JSON.stringify(context),
@@ -96,12 +105,12 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
             return;
         }
 
-        const [instance, ...unused]: Type<PubsubEvent<any>>[] = instances;
+        const [firstEventClass, ...unused]: Type<PubsubEvent<any>>[] = eventClasses;
         if (unused.length) {
-            this.logger().warn("Handler's event intersection detected", JSON.stringify({ ...context, unused }));
+            this.logger().warn("Handler's event intersection detected", JSON.stringify({ ...context, used: firstEventClass, unused }));
         }
 
-        const pubsubEvent: PubsubEvent<any> = new instance(JSON.parse(message.content.toString())).withMessage(message);
+        const pubsubEvent: PubsubEvent<any> = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
 
         this.subject$.next(pubsubEvent);
     };

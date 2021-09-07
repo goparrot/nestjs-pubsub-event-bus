@@ -16,11 +16,14 @@ It is highly recommended installing `peerDependencies` by yourself.
 
 Import module & configure it by providing the connection string.
 
-    export const connections: string[] = ['amqp://username:pass@example.com/virtualhost'];
-    @Module({
-        imports: [ CqrsModule.forRoot({ connections }) ],
-    })
-    export class AppModule {}
+```ts
+export const connections: string[] = ['amqp://username:pass@example.com/virtualhost'];
+
+@Module({
+    imports: [CqrsModule.forRoot({ connections })],
+})
+export class AppModule {}
+```
 
 Note: The `CqrsModule` class should be imported from `@goparrot/pubsub-event-bus` library.
 
@@ -48,15 +51,15 @@ So, assuming, the payload data model is:
 
 ```ts
 export interface IStoreCreatedPayload {
-  storeId: string;
+    storeId: string;
 }
 ```
 
-We're gonna create a new event class:
+We're going to create a new event class:
 
 ```ts
 export class StoreCreated extends PubsubEvent<IStoreCreatedPayload> {
-  exchange = (): string => "store";
+    exchange = (): string => 'store';
 }
 ```
 
@@ -66,15 +69,15 @@ Inject `EventBus` into your service/controller in order to emit the event.
 
 ```ts
 class SomeService {
-  constructor(private readonly eventBus: EventBus) {}
+    constructor(private readonly eventBus: EventBus) {}
 
-  doCoolStuff() {
-    // create item
+    async doCoolStuff() {
+        // create item
 
-    this.eventBus.publish(new ItemCreated({ storeId }));
+        await this.eventBus.publish(new ItemCreated({ storeId }));
 
-    // return item
-  }
+        // return item
+    }
 }
 ```
 
@@ -89,11 +92,11 @@ Create a simple class which extends `PubsubHandler` and implements `IEventHandle
 ```ts
 @PubsubEventHandler(StoreCreated)
 export class StoreCreatedHandler extends PubsubHandler implements IEventHandler {
-  handle(event: StoreCreated) {
-    console.log(`[${this.constructor.name}] ->`, event.payload());
-  }
+    handle(event: StoreCreated) {
+        console.log(`[${this.constructor.name}] ->`, event.payload());
+    }
 
-  exchange = (): string => "store";
+    exchange = (): string => 'store';
 }
 ```
 
@@ -105,19 +108,17 @@ Notice, Unlike regular Cqrs events handlers, PubSub EventHandler uses its own de
 @PubsubEventHandler(StoreCreated, UserCreated)
 ```
 
-or it may be listening for all events in desired exchange ("#" - fanout), just add a `Fanout` event:
+or it may be listening for all events in desired exchange ('#' - fanout), just add a `Fanout` event:
 
 ```ts
 @PubsubEventHandler(Fanout)
 ```
 
-[Note] EventBus pushes the message through the NestJS EventBus and through the RabbitMQ.
-That means that this handler is still perfectly compatible with NestJs event handler, so it can be used by the same service which produces the event.
+[Note] EventBus pushes the message through the NestJS EventBus and through the RabbitMQ. That means that this handler is still perfectly compatible with NestJS
+event handler, so it can be used by the same service which produces the event.
 
-MicroService 1 -> Produces Event
-MicroService 2 <- Consumes Event
-MicroService 3 <- Consumes Event
-MicroService 1 <- Consumes Event (just use default `@EventHandler` decorator and there is no need to extend `PubsubHandler` class)!
+MicroService 1 -> Produces Event MicroService 2 <- Consumes Event MicroService 3 <- Consumes Event MicroService 1 <- Consumes Event (just use
+default `@EventHandler` decorator and there is no need to extend `PubsubHandler` class)!
 
 ### Implement required methods:
 
@@ -145,11 +146,11 @@ In order to emit an event with extra headers, just call the `withOptions({})` me
 
 ```ts
 this.eventBus.publish(
-  new StoreCreated("storeId").withOptions({
-    persistent: false,
-    priority: 100,
-    headers: ["..."],
-  }),
+    new StoreCreated('storeId').withOptions({
+        persistent: false,
+        priority: 100,
+        headers: ['...'],
+    }),
 );
 ```
 
@@ -160,11 +161,11 @@ Also, you can define a very specific events, it will be listening for, by declar
 ```ts
 @PubsubEventHandler(StoreCreated)
 export class StoreCreatedHandler extends PubsubHandler implements IEventHandler<StoreCreated> {
-  withQueueConfig = (): Options.AssertQueue => ({
-    exclusive: true,
-    durable: false,
-    messageTtl: 10,
-  });
+    withQueueConfig = (): Options.AssertQueue => ({
+        exclusive: true,
+        durable: false,
+        messageTtl: 10,
+    });
 }
 ```
 
