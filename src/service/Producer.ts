@@ -1,8 +1,14 @@
+import type { ConfirmChannel } from 'amqplib';
 import type { PublishOptions } from '../interface';
 import { ConfigProvider } from '../provider';
 import { PubsubManager } from './PubsubManager';
 
 export class Producer extends PubsubManager {
+    /**
+     * Set of exchanges where messages are published to
+     */
+    private readonly exchanges: Set<string> = new Set<string>();
+
     /**
      * Produce an event.
      * @param event - event name (Ex.: store.created, user.updated, order.cancelled, etc...)
@@ -19,11 +25,17 @@ export class Producer extends PubsubManager {
 
         const message: string = `Event "${event}" to "${exchange}" with ${JSON.stringify({ payload, headers })}`;
 
-        await this.channelWrapper.publish(exchange, event, payload, headers, (err: Error | null | undefined): void => {
-            const isSuccess: boolean = !err;
+        if (!this.exchanges.has(exchange)) {
+            await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => channel.assertExchange(exchange, 'topic', this.exchangeOptions()));
+            this.exchanges.add(exchange);
+        }
 
-            isSuccess ? this.logger().log(`${message} -> PUBLISHED.`) : this.logger().warn(`${message} -> UNPUBLISHED -> [${(err as Error).message}]`);
-        });
+        try {
+            await this.channelWrapper.publish(exchange, event, payload, headers);
+            this.logger().log(`${message} -> PUBLISHED.`);
+        } catch (e) {
+            this.logger().error(`${message} -> UNPUBLISHED -> [${(e as Error).message}]`);
+        }
     }
 
     protected headers(extra?: PublishOptions): PublishOptions {
