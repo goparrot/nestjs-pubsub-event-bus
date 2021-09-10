@@ -78,6 +78,22 @@ export class Consumer extends PubsubManager {
         }
     }
 
+    addHandleCatch(handler: Type<IEventHandler>): void {
+        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
+        const logger: LoggerService = this.logger();
+
+        Reflect.defineProperty(handler.prototype, 'handle', {
+            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
+            async value(event: PubsubEvent<any>): Promise<void> {
+                try {
+                    await originalMethod.apply(this, [event]);
+                } catch (e) {
+                    logger.error(e, undefined, JSON.stringify({ event, handler: handler.name }));
+                }
+            },
+        });
+    }
+
     ack(message: Message): void {
         if (this.appInTestingMode()) {
             return;

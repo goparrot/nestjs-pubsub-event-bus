@@ -31,6 +31,7 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
             const { events, autoAck = AutoAckEnum.ALWAYS_ACK }: IPubsubEventHandlerMetadata = this.reflectPubsubMetadata(handler);
 
             this.consumer.configureAutoAck(handler, autoAck);
+            this.consumer.addHandleCatch(handler);
             this.registerPubsubHandler(handler, events);
 
             const eventNames: string[] = events.map((event: Type<PubsubEvent<any>>): string => {
