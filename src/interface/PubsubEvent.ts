@@ -4,7 +4,7 @@ import type { PublishOptions } from './PublishOptions';
 export abstract class PubsubEvent<T> extends PubsubEventListener<T> {
     // Default publish options.
     protected options: PublishOptions = {};
-    protected fireLocally: boolean = true;
+    protected fireLocally: boolean = false;
 
     // Exchange name
     abstract exchange(): string;
