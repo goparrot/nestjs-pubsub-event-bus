@@ -34,13 +34,15 @@ export class Consumer extends PubsubManager {
      * @param onMessage - a callback that receives an event message
      */
     async consume(handler: PubsubHandler, events: string[], onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
-        if (this.appInTestingMode()) return;
+        if (this.appInTestingMode()) {
+            return;
+        }
 
         const exchange: string = handler.exchange();
         const queueName: string = handler.queue() ?? this.queue(handler);
         const listenFor: string[] = this.listenFor(handler, events);
 
-        await this.channelWrapper$.addSetup(async (channel: ConfirmChannel) => {
+        await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
                 channel.assertExchange(exchange, 'topic', this.exchangeOptions()),
                 channel.assertQueue(queueName, this.bindingOptions(handler.withQueueConfig())),
@@ -77,11 +79,17 @@ export class Consumer extends PubsubManager {
     }
 
     ack(message: Message): void {
-        this.channelWrapper$.ack(message);
+        if (this.appInTestingMode()) {
+            return;
+        }
+        this.channelWrapper.ack(message);
     }
 
     nack(message: Message): void {
-        this.channelWrapper$.nack(message);
+        if (this.appInTestingMode()) {
+            return;
+        }
+        this.channelWrapper.nack(message);
     }
 
     /**

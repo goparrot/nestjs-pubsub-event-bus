@@ -1,17 +1,24 @@
-import * as RabbitManager from 'amqp-connection-manager';
 import type { LoggerService, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import type { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
+import * as RabbitManager from 'amqp-connection-manager';
 import type { ConfirmChannel } from 'amqplib';
-import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
 import type { ExchangeOptions } from '../interface';
+import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
 
 /**
  * Review the work with connections & channels, according to these recommendations.
  * https://www.cloudamqp.com/blog/2018-01-19-part4-rabbitmq-13-common-errors.html
  */
 export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
-    protected connection$: AmqpConnectionManager;
-    protected channelWrapper$: ChannelWrapper;
+    private connection$: AmqpConnectionManager | undefined;
+    private channelWrapper$: ChannelWrapper | undefined;
+
+    get channelWrapper(): ChannelWrapper {
+        if (!this.channelWrapper$) {
+            throw new Error('Amqp connection has not been initialized');
+        }
+        return this.channelWrapper$;
+    }
 
     async setupChannel(_channel: ConfirmChannel): Promise<void> {}
 
@@ -48,5 +55,5 @@ export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
         };
     }
 
-    protected appInTestingMode = (): boolean => process.env.NODE_ENV! === 'test';
+    protected appInTestingMode = (): boolean => process.env.NODE_ENV === 'test';
 }
