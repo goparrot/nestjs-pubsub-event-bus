@@ -34,7 +34,7 @@ import type { ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
         },
         {
             provide: CQRS_MODULE_CONSUMER_OPTIONS,
-            useFactory: (options: ICqrsModuleOptions): unknown => ({ ...DEFAULT_CONSUMER_OPTIONS, ...options?.config?.consumer }),
+            useFactory: (options: ICqrsModuleOptions): unknown => ({ ...DEFAULT_CONSUMER_OPTIONS, ...options.config?.consumer }),
             inject: [CQRS_MODULE_OPTIONS],
         },
     ],

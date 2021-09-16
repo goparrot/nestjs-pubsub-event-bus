@@ -39,7 +39,7 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
     }
 
     protected registerPubsubHandler(handler: EventHandlerType<EventBase>, events: Type<PubsubEvent<any>>[]): void {
-        const instance: IEventHandler<EventBase> = this.moduleRefs.get(handler, { strict: false });
+        const instance: IEventHandler<EventBase> | undefined = this.moduleRefs.get(handler, { strict: false });
         if (!instance) {
             this.logger().warn('Could not get event handler instance', JSON.stringify({ name: handler.name }));
             return;
@@ -49,7 +49,7 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
     }
 
     protected async bindPubsubConsumer(handler: EventHandlerType<EventBase>, events: string[]): Promise<void> {
-        const handlerInstance: PubsubHandler = this.moduleRefs.get(handler, { strict: false });
+        const handlerInstance: PubsubHandler | undefined = this.moduleRefs.get(handler, { strict: false });
         if (!handlerInstance) {
             this.logger().warn('Could not get event handler instance', JSON.stringify({ name: handler.name }));
             return;
@@ -89,7 +89,7 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
 
         if (!instances.length) {
             this.logger().warn(
-                'No event class matched. Possible reason: handler no longer listens for this type of messages, so queue should be unbinded',
+                'No event class matched. Possible reason: handler no longer listens for this type of message, so queue should be unbound',
                 JSON.stringify(context),
             );
             this.consumer.ack(message);
@@ -101,7 +101,7 @@ export class EventBus<EventBase extends IEvent = IEvent> extends NestEventBus {
             this.logger().warn("Handler's event intersection detected", JSON.stringify({ ...context, unused }));
         }
 
-        const pubsubEvent: PubsubEvent<any> = new instance(JSON.parse(message?.content.toString())).withMessage(message);
+        const pubsubEvent: PubsubEvent<any> = new instance(JSON.parse(message.content.toString())).withMessage(message);
 
         this.subject$.next(pubsubEvent);
     };
