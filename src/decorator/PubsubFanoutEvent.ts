@@ -1,8 +1,8 @@
-import { PUBSUB_EVENT_NAME } from './constant';
+import type { IPubsubEventOptions } from './PubsubEvent';
+import { PubsubEvent } from './PubsubEvent';
 
-export function PubsubFanoutEvent(): ClassDecorator {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    return (target: object): void => {
-        Reflect.defineMetadata(PUBSUB_EVENT_NAME, '#', target);
-    };
+export type IPubsubFanoutEventOptions = Omit<IPubsubEventOptions, 'customRoutingKey'>;
+
+export function PubsubFanoutEvent(options: IPubsubFanoutEventOptions): ClassDecorator {
+    return PubsubEvent({ ...options, customRoutingKey: '#' });
 }

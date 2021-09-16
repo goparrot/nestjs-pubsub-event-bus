@@ -1,4 +1,4 @@
-import { toEventClassName, toEventName, toSnakeCase } from '../../src/utils';
+import { toEventClassName, toEventName, toSnakeCase } from '../../src';
 
 describe('Utils', () => {
     describe('toEventName', () => {
@@ -10,11 +10,6 @@ describe('Utils', () => {
 
         it('should disregard the Event word in a class name', () => {
             expect(toEventName('UserCreatedEvent')).toEqual('user.created');
-        });
-
-        it('should handle the Fanout event', () => {
-            expect(toEventName('Fanout')).toEqual('#');
-            expect(toEventName('FanoutEvent')).toEqual('#');
         });
     });
 

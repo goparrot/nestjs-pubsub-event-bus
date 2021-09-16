@@ -1,9 +1,9 @@
+import type { IEventHandler } from '@nestjs/cqrs';
+import type { AbstractSubscriptionEvent } from './AbstractSubscriptionEvent';
 import type { BindingQueueOptions } from './BindingQueueOptions';
-import type { PubsubEvent } from './PubsubEvent';
 
-export abstract class PubsubHandler {
-    // Exchange name to bind the queue.
-    abstract exchange(): string;
+export abstract class AbstractPubsubHandler<T extends AbstractSubscriptionEvent<any>> implements IEventHandler<T> {
+    abstract handle(event: T): void | Promise<void>;
 
     queue = (): string | undefined => undefined;
 
@@ -15,12 +15,12 @@ export abstract class PubsubHandler {
      * This method should be used only when automatic acknowledge is disabled.
      * This method should not be overridden
      */
-    ack(_event: PubsubEvent<any>): void {}
+    ack(_event: AbstractSubscriptionEvent<any>): void {}
 
     /**
      * Negatively acknowledge event.
      * This method should be used only when automatic acknowledge is disabled.
      * This method should not be overridden
      */
-    nack(_event: PubsubEvent<any>): void {}
+    nack(_event: AbstractSubscriptionEvent<any>): void {}
 }

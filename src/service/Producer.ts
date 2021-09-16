@@ -1,40 +1,52 @@
+import { Injectable } from '@nestjs/common';
 import type { ConfirmChannel } from 'amqplib';
-import type { PublishOptions } from '../interface';
+import type { IPubsubEventOptions } from '../decorator';
+import { PubsubEvent } from '../decorator';
+import type { AbstractPubsubEvent, PublishOptions } from '../interface';
 import { ConfigProvider } from '../provider';
+import { toEventName } from '../utils';
 import { PubsubManager } from './PubsubManager';
+import { PubSubReflector } from './PubSubReflector';
 
+@Injectable()
 export class Producer extends PubsubManager {
     /**
      * Set of exchanges where messages are published to
      */
     private readonly exchanges: Set<string> = new Set<string>();
 
+    constructor(private readonly reflector: PubSubReflector) {
+        super();
+    }
+
     /**
      * Produce an event.
-     * @param event - event name (Ex.: store.created, user.updated, order.cancelled, etc...)
-     * @param payload - message payload
-     * @param exchange - exchange name
-     * @param publishHeaders - custom message headers
      */
-    async produce(event: string, payload: Record<string, any> | Buffer, exchange: string, publishHeaders?: PublishOptions): Promise<void> {
+    async produce(event: AbstractPubsubEvent<any>): Promise<void> {
         if (this.appInTestingMode()) {
             return;
         }
-
-        const headers: PublishOptions = { ...this.headers(publishHeaders), type: event };
-
-        const message: string = `Event "${event}" to "${exchange}" with ${JSON.stringify({ payload, headers })}`;
+        const metadata: IPubsubEventOptions | undefined = this.reflector.extractEventMetadata(event);
+        if (!metadata) {
+            throw new Error(`Event should be decorated with "${PubsubEvent.name}"`);
+        }
+        const { exchange, customRoutingKey }: IPubsubEventOptions = metadata;
 
         if (!this.exchanges.has(exchange)) {
             await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => channel.assertExchange(exchange, 'topic', this.exchangeOptions()));
             this.exchanges.add(exchange);
         }
 
+        const routingKey: string = customRoutingKey ?? toEventName(event.constructor.name);
+        const headers: PublishOptions = { ...this.headers(event.getOptions()), type: routingKey };
+        const { payload }: AbstractPubsubEvent<any> = event;
+
+        const message: string = `Event "${routingKey}" to "${exchange}" with ${JSON.stringify({ payload, headers })}`;
         try {
-            await this.channelWrapper.publish(exchange, event, payload, headers);
+            await this.channelWrapper.publish(exchange, routingKey, payload, headers);
             this.logger().log(`${message} -> PUBLISHED.`);
         } catch (e) {
-            this.logger().error(`${message} -> UNPUBLISHED -> [${(e as Error).message}]`);
+            this.logger().error(`${message} -> FAILED TO PUBLISH -> [${(e as Error).message}]`);
         }
     }
 

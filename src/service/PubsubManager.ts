@@ -13,7 +13,7 @@ export abstract class PubsubManager implements OnModuleInit, OnModuleDestroy {
     private connection$: AmqpConnectionManager | undefined;
     private channelWrapper$: ChannelWrapper | undefined;
 
-    get channelWrapper(): ChannelWrapper {
+    protected get channelWrapper(): ChannelWrapper {
         if (!this.channelWrapper$) {
             throw new Error('Amqp connection has not been initialized');
         }
