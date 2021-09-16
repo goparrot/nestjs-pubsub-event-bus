@@ -5,6 +5,7 @@
     "main": "src/index.js",
     "scripts": {
         "commit": "git-cz",
+        "prepare": "husky install",
         "pre-commit": "npm run format:staged && tsc --project tsconfig.json && npm run build:dist && npm run lint",
         "prettier": "npm run prettier:base -- '**/**.+(md)'",
         "prettier:base": "prettier --ignore-path .eslintignore --write",
@@ -51,12 +52,6 @@
     "engines": {
         "node": "^12.10"
     },
-    "husky": {
-        "hooks": {
-            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS && npm run pre-commit",
-            "post-commit": "git update-index --again"
-        }
-    },
     "lint-staged": {
         "*.{ts,tsx,js,json}": [
             "npm run format:base"
@@ -92,7 +87,7 @@
         "commitizen": "^4.2.4",
         "conventional-changelog-cli": "^2.1.1",
         "cz-conventional-changelog": "^3.3.0",
-        "husky": "^4.3.8",
+        "husky": "^7.0.2",
         "jest": "^27.2.0",
         "lint-staged": "^11.1.2",
         "lodash": "^4.17.21",
