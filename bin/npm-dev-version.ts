@@ -22,10 +22,6 @@ void (async (): Promise<void> => {
     const ticketNumber: string | undefined = /^(feature|feat|hotfix|fix)\/(\d+)/gim.exec(branchName)?.[0]?.split('/').pop();
     const semVer: SemVer = new SemVer(version);
 
-    if (!semVer) {
-        throw new Error(`Can't find package.json version`);
-    }
-
     console.log('Input data', { packageJsonPath, branchName, ticketNumber, version: semVer.format() });
 
     if (!semVer.prerelease.length && !ticketNumber) {

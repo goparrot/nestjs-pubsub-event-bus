@@ -1,12 +1,13 @@
-# eslint by default ignores all hidden directories
-# example, if you want lint hidden directories (also you must add ".storybook/**/*" to the tsconfig.eslint.json in the "include" property)
-#!.storybook
+# you must any dot `.file` which you want to ignore
+# by default we don't ignore hidden `!.*.js` and `!.*.json` files in the root directory (for example: `.commitlintrc.js`, .`prettierrc.json`)
+# example: if you don't want to ignore these files
+!.eslintrc.js
 
 # don't forget to add here all ignored folders or files from .gitignore that you don't need to check with a linter (there is no magic)
-node_modules
+# by default we ignore `node_modules` and `.yalc` folders in the root directory
+# example: if you want to ignore these files or directories
 dist
 coverage
 test-reports
 .nyc_output
-
-# add here all custom rules
+.bit
