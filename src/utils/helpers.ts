@@ -8,37 +8,29 @@ import startCase from 'lodash/startCase';
  * @example OrderStatusUpdated => "order.status.updated"
  * @example Fanout => "#"
  */
-export const toEventName = (className: string): string => {
-    className = snakeCase(className.replace(/Event$/, '')).replace(/_/gi, '.');
-
-    if (className === 'fanout') {
-        return '#';
-    }
-
-    return className;
-};
+export function toEventName(className: string): string {
+    return snakeCase(className.replace(/Event$/, '')).replace(/_/gi, '.');
+}
 
 /**
  * Convert event to a producer class name.
  *
  * @example "user.created" => UserCreated
- * @example "#" => Fanout
  */
-export const toEventClassName = (event: string): string => {
+export function toEventClassName(event: string): string {
     return event.split('.').map(startCase).join('');
-};
+}
 
 /**
  * Generate queue name based on Event/Handler class name
  *
  * @example StoreNotifierHandler => "store_notifier"
  * @example OrderStatusUpdatedHandler => "order_status_updated";
- * @param className
  */
-export const toSnakeCase = (className: string | Record<string, unknown>): string => {
+export function toSnakeCase(className: string | Record<string, unknown>): string {
     if (typeof className === 'object') {
         className = className.constructor.name;
     }
 
     return snakeCase(className.toString().replace(/Handler$/, ''));
-};
+}

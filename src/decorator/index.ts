@@ -1,4 +1,5 @@
 export * from './constant';
-export * from './PubsubEventName';
+export * from './PubsubEvent';
 export * from './PubsubFanoutEvent';
+export * from './SubscriptionEvent';
 export * from './PubsubEventHandler';

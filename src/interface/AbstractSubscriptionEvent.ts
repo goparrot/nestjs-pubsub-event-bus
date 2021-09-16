@@ -1,6 +1,7 @@
+import type { IEvent } from '@nestjs/cqrs';
 import type { Message } from 'amqplib';
 
-export abstract class PubsubEventListener<T extends Record<string, any> | Buffer> {
+export abstract class AbstractSubscriptionEvent<T extends Record<string, any> | Buffer> implements IEvent {
     #message: Message | undefined;
 
     constructor(readonly payload: T) {}

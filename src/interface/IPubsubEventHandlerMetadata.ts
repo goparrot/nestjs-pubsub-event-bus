@@ -1,7 +1,7 @@
 import type { Type } from '@nestjs/common';
 import type { IPubsubEventHandlerOptions } from '../decorator';
-import type { PubsubEvent } from './index';
+import type { AbstractPubsubEvent } from './AbstractPubsubEvent';
 
-export interface IPubsubEventHandlerMetadata extends IPubsubEventHandlerOptions {
-    events: Type<PubsubEvent<any>>[];
+export interface IPubsubEventHandlerMetadata<T extends AbstractPubsubEvent<any> = AbstractPubsubEvent<any>> extends IPubsubEventHandlerOptions {
+    events: Type<T>[];
 }
