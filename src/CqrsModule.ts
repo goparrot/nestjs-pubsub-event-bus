@@ -1,10 +1,9 @@
 import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
-import { CommandBus, Consumer, EventBus, ExplorerService, Producer, Publisher, PubSubReflector, QueryBus } from './service';
+import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
 
 @Module({
@@ -46,7 +45,6 @@ export class CqrsModule implements OnApplicationBootstrap {
         private readonly eventsBus: EventBus,
         private readonly commandsBus: CommandBus,
         private readonly queryBus: QueryBus,
-        private readonly moduleRef: ModuleRef,
     ) {}
 
     static forRoot(options: ICqrsModuleOptions): DynamicModule {
@@ -84,7 +82,6 @@ export class CqrsModule implements OnApplicationBootstrap {
         this.eventsBus.registerSagas(sagas);
         this.eventsBus.register(events);
 
-        this.eventsBus.publisher = new Publisher(this.eventsBus.subject$, this.moduleRef.get(Producer));
         await this.eventsBus.registerPubsubEvents(this.explorerService.pubsubEvents());
     }
 }
