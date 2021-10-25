@@ -1,7 +1,7 @@
 import type { LoggerService, Type } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { IEventHandler } from '@nestjs/cqrs';
+import type { IEvent, IEventHandler } from '@nestjs/cqrs';
 import { EventBus as NestEventBus } from '@nestjs/cqrs';
 import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
@@ -13,32 +13,46 @@ import { LoggerProvider } from '../provider';
 import { toEventName } from '../utils';
 import { CommandBus } from './CommandBus';
 import { Consumer } from './Consumer';
+import { Producer } from './Producer';
+import { Publisher } from './Publisher';
 import { PubSubReflector } from './PubSubReflector';
 
 @Injectable()
-export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsubEvent<any>> extends NestEventBus<EventBase> {
-    constructor(
-        commandBus: CommandBus,
-        private readonly moduleRefs: ModuleRef,
-        private readonly consumer: Consumer,
-        private readonly reflector: PubSubReflector<EventBase>,
-    ) {
-        super(commandBus, moduleRefs);
+export class EventBus extends NestEventBus<IEvent> {
+    private _pubSubPublisher: Publisher;
+
+    get publisher(): Publisher {
+        return this._pubSubPublisher;
     }
 
-    async publish(event: EventBase): Promise<void> {
+    set publisher(pubSubPublisher: Publisher) {
+        super.publisher = pubSubPublisher;
+        this._pubSubPublisher = pubSubPublisher;
+    }
+
+    constructor(
+        commandBus: CommandBus,
+        private readonly consumer: Consumer,
+        private readonly moduleRefs: ModuleRef,
+        private readonly reflector: PubSubReflector,
+    ) {
+        super(commandBus, moduleRefs);
+        this.usePubSubPublisher();
+    }
+
+    async publish<T extends IEvent>(event: T): Promise<void> {
         return super.publish(event);
     }
 
-    async publishAll(events: EventBase[]): Promise<void> {
+    async publishAll<T extends IEvent>(events: T[]): Promise<void> {
         return super.publishAll(events);
     }
 
-    async registerPubsubEvents(handlers: Type<AbstractPubsubHandler<EventBase>>[]): Promise<void> {
-        const handlersWithEvents: IHandlerWrapper<EventBase>[] = this.filterValidHandlersWithEvents(handlers);
+    async registerPubsubEvents(handlers: Type<AbstractPubsubHandler<AbstractPubsubEvent<any>>>[]): Promise<void> {
+        const handlersWithEvents: IHandlerWrapper[] = this.filterValidHandlersWithEvents(handlers);
 
         for (const mappedHandler of handlersWithEvents) {
-            const { handler, autoAck = AutoAckEnum.ALWAYS_ACK }: IHandlerWrapper<EventBase> = mappedHandler;
+            const { handler, autoAck = AutoAckEnum.ALWAYS_ACK }: IHandlerWrapper = mappedHandler;
 
             this.consumer.configureAutoAck(handler, autoAck);
             this.consumer.addHandleCatch(handler);
@@ -52,22 +66,22 @@ export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsu
         return LoggerProvider.logger;
     }
 
-    protected registerPubsubHandler(handlerWrapper: IHandlerWrapper<EventBase>): void {
-        const { handler, eventWrappers }: IHandlerWrapper<EventBase> = handlerWrapper;
+    protected registerPubsubHandler(handlerWrapper: IHandlerWrapper): void {
+        const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
 
-        const instance: IEventHandler<EventBase> | undefined = this.moduleRefs.get(handler, { strict: false });
+        const instance: IEventHandler<IEvent> | undefined = this.moduleRefs.get(handler, { strict: false });
         if (!instance) {
             this.logger().warn(`Could not get event handler "${handler.name}" instance`);
             return;
         }
 
-        eventWrappers.forEach((eventWrapper: IEventWrapper<EventBase>) => this.bind(instance, eventWrapper.event.name));
+        eventWrappers.forEach((eventWrapper: IEventWrapper) => this.bind(instance, eventWrapper.event.name));
     }
 
-    protected async bindPubsubConsumer(handlerWrapper: IHandlerWrapper<EventBase>): Promise<void> {
-        const { handler, eventWrappers }: IHandlerWrapper<EventBase> = handlerWrapper;
+    protected async bindPubsubConsumer(handlerWrapper: IHandlerWrapper): Promise<void> {
+        const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
 
-        const handlerInstance: AbstractPubsubHandler<EventBase> | undefined = this.moduleRefs.get(handler, { strict: false });
+        const handlerInstance: AbstractPubsubHandler<AbstractPubsubEvent<any>> | undefined = this.moduleRefs.get(handler, { strict: false });
         if (!handlerInstance) {
             this.logger().warn(`Could not get event handler "${handler.name}" instance`);
             return;
@@ -80,8 +94,8 @@ export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsu
         });
     }
 
-    protected emitPubsubEvent(handlerWrapper: IHandlerWrapper<EventBase>, message: ConsumeMessage): void {
-        const { handler, eventWrappers }: IHandlerWrapper<EventBase> = handlerWrapper;
+    protected emitPubsubEvent(handlerWrapper: IHandlerWrapper, message: ConsumeMessage): void {
+        const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
         const typeProperty: string | unknown = message.properties.type;
 
         const baseContext: Record<string, unknown> = { handler: handler.name, type: typeProperty };
@@ -93,13 +107,13 @@ export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsu
         }
 
         // try exact match at first
-        let matchedEventWrappers: IEventWrapper<EventBase>[] = eventWrappers.filter(
-            ({ event, exchange }: IEventWrapper<EventBase>) => exchange === message.fields.exchange && toEventName(event.name) === typeProperty,
+        let matchedEventWrappers: IEventWrapper[] = eventWrappers.filter(
+            ({ event, exchange }: IEventWrapper) => exchange === message.fields.exchange && toEventName(event.name) === typeProperty,
         );
 
         // fallback to binding pattern at second
         if (!matchedEventWrappers.length) {
-            matchedEventWrappers = eventWrappers.filter((eventWrapper: IEventWrapper<EventBase>) => {
+            matchedEventWrappers = eventWrappers.filter((eventWrapper: IEventWrapper) => {
                 const bindingPattern: string = this.consumer.extractBindingPattern(eventWrapper);
 
                 return eventWrapper.exchange === message.fields.exchange && EventBus.checkTypeAgainstBinding(typeProperty, bindingPattern);
@@ -110,7 +124,7 @@ export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsu
             this.logger().warn(
                 JSON.stringify({
                     ...baseContext,
-                    events: matchedEventWrappers.map((eventWrapper: IEventWrapper<EventBase>) => {
+                    events: matchedEventWrappers.map((eventWrapper: IEventWrapper) => {
                         return {
                             name: eventWrapper.event.name,
                             bindingPattern: this.consumer.extractBindingPattern(eventWrapper),
@@ -123,38 +137,38 @@ export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsu
             return;
         }
 
-        const eventClasses = matchedEventWrappers.map((eventWrapper: IEventWrapper<EventBase>) => eventWrapper.event);
+        const eventClasses = matchedEventWrappers.map((eventWrapper: IEventWrapper) => eventWrapper.event);
 
-        const [firstEventClass, ...unused]: Type<EventBase>[] = eventClasses;
+        const [firstEventClass, ...unused]: Type<AbstractPubsubEvent<any>>[] = eventClasses;
         if (unused.length) {
             this.logger().warn(
                 JSON.stringify({
                     ...baseContext,
                     used: firstEventClass.name,
-                    unused: unused.map((event: Type<EventBase>) => event.name),
+                    unused: unused.map((event: Type<AbstractPubsubEvent<any>>) => event.name),
                     message: "Handler's event" + ' intersection' + ' detected',
                 }),
             );
         }
 
-        const pubsubEvent: EventBase = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
+        const pubsubEvent: AbstractPubsubEvent<any> = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
 
-        this.subject$.next(pubsubEvent);
+        this._pubSubPublisher.publishLocally(pubsubEvent);
     }
 
-    private filterValidHandlersWithEvents(handlers: Type<AbstractPubsubHandler<EventBase>>[]): IHandlerWrapper<EventBase>[] {
-        const validHandlersWithEvents: IHandlerWrapper<EventBase>[] = [];
+    private filterValidHandlersWithEvents(handlers: Type<AbstractPubsubHandler<AbstractPubsubEvent<any>>>[]): IHandlerWrapper[] {
+        const validHandlersWithEvents: IHandlerWrapper[] = [];
 
-        handlers.forEach((handler: Type<AbstractPubsubHandler<EventBase>>) => {
-            const metadata: IPubsubEventHandlerMetadata<EventBase> | undefined = this.reflector.reflectHandlerMetadata(handler);
+        handlers.forEach((handler: Type<AbstractPubsubHandler<AbstractPubsubEvent<any>>>) => {
+            const metadata: IPubsubEventHandlerMetadata | undefined = this.reflector.reflectHandlerMetadata(handler);
             if (!metadata) {
                 this.logger().error(`Event handler "${handler.name}" should be decorated with "${PubsubEventHandler.name}"`);
                 return;
             }
 
-            const eventWrappers: IEventWrapper<EventBase>[] = [];
+            const eventWrappers: IEventWrapper[] = [];
 
-            metadata.events.forEach((event: Type<EventBase>) => {
+            metadata.events.forEach((event: Type<AbstractPubsubEvent<any>>) => {
                 const metadata: IPubsubEventOptions | undefined = this.reflector.reflectEventMetadata(event);
                 if (!metadata) {
                     this.logger().error(`Event "${event.name}" should be decorated with "${PubsubEvent.name}"`);
@@ -173,5 +187,12 @@ export class EventBus<EventBase extends AbstractPubsubEvent<any> = AbstractPubsu
     private static checkTypeAgainstBinding(typeProperty: string, bindingPattern: string): boolean {
         // transform pattern to regexp to support "*" binding
         return new RegExp(`^${escapeRegExp(bindingPattern).replace(/\\\*/g, '\\w*')}$`).test(typeProperty);
+    }
+
+    private usePubSubPublisher(): void {
+        const pubSubPublisher = new Publisher(this.subject$, this.moduleRefs.get(Producer));
+
+        super.publisher = pubSubPublisher;
+        this._pubSubPublisher = pubSubPublisher;
     }
 }
