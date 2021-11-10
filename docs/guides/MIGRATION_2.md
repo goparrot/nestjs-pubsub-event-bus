@@ -89,6 +89,7 @@ export class MyPubsubEvent extends AbstractPubsubEvent<IMyPubsubEvent> {}
 Before:
 
 ```typescript
+@PubsubEventHandler(MyPubsubEvent)
 export class MyPubsubEventHandler extends PubsubHandler implements IEventHandler<MyPubsubEvent> {
     exchange: () => "my_exchange";
 
@@ -101,6 +102,7 @@ export class MyPubsubEventHandler extends PubsubHandler implements IEventHandler
 Now:
 
 ```typescript
+@PubsubEventHandler(MyPubsubEvent)
 export class MyPubsubEventHandler extends AbstractPubsubHandler<MyPubsubEvent> {
     async handle(event: MyPubsubEvent): Promise<void> {
         const payload: IMyPubsubEvent = event.payload;
