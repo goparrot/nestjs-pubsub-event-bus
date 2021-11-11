@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Bug Fixes
 
-* allow non-pubsub events publishing ([7b5bf48](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/7b5bf484aefa166b8695375a3c94743036082512))
+* allow non-pubsub events publishing ([d821816](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/d8218161af2a5a389d79942584c9eaebea523fd8))
 
 ## [2.0.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v1.5.2...v2.0.0) (2021-09-17)
 
