@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.0.1...v2.0.2) (2021-11-11)
+
+
+### Changes
+
+* add support for nodejs versions 14 and 16 ([f5ccdd0](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/f5ccdd027648345e657c0679d3f616720e7d7674))
+
 ### [2.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.0.0...v2.0.1) (2021-10-26)
 
 
