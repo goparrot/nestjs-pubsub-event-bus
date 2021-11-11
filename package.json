@@ -50,7 +50,7 @@
         "test": "./test"
     },
     "engines": {
-        "node": "^12.10"
+        "node": "^12.10 | ^14.10 | ^16.13"
     },
     "lint-staged": {
         "*.{ts,tsx,js,json}": [
