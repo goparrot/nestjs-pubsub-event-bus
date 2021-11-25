@@ -17,6 +17,8 @@ It is highly recommended installing `peerDependencies` by yourself.
 Import module & configure it by providing the connection string.
 
 ```ts
+import { CqrsModule } from '@goparrot/pubsub-event-bus';
+
 export const connections: string[] = ['amqp://username:pass@example.com/virtualhost'];
 
 @Module({
@@ -34,47 +36,43 @@ Note: The `CqrsModule` class should be imported from `@goparrot/pubsub-event-bus
 Event is a simple class with message payload.
 
 ```ts
-export class StoreCreated {
-    constructor({ storeId: 'real-store-id' }) {}
+export class StoreCreated implements IEvent {
+    constructor(private readonly storeId: string) {}
 }
 ```
 
 This is the fully compatible event class that can be used with NestJS EventBus.
 
-In order to make it a PubSub ready, it should extend a `PubsubEvent` class (imported from `@goparrot/pubsub-event-bus`).
-
-Once extended, implement methods required by `PubsubEvent`:
-
-`exchange` - the RabbitMQ exchange name (there is a list of predefined valid exchanges)
-
-So, assuming, the payload data model is:
+In order to make it PubSub ready, it should extend the `AbstractPubsubEvent` class and be decorated with `PubsubEvent` (both imported
+from `@goparrot/pubsub-event-bus`).
 
 ```ts
+import { AbstractPubsubEvent, PubsubEvent } from '@goparrot/pubsub-event-bus';
+
 export interface IStoreCreatedPayload {
     storeId: string;
 }
-```
 
-We're going to create a new event class:
-
-```ts
-export class StoreCreated extends PubsubEvent<IStoreCreatedPayload> {
-    exchange = (): string => 'store';
-}
+@PubsubEvent({ exchange: 'store' })
+export class StoreCreated extends AbstractPubsubEvent<IStoreCreatedPayload> {}
 ```
 
 ### Publish event
 
-Inject `EventBus` into your service/controller in order to emit the event.
+Inject `EventBus` into the service in order to emit the event (imported from `@goparrot/pubsub-event-bus`).
 
 ```ts
+import { EventBus } from '@goparrot/pubsub-event-bus';
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
 class SomeService {
     constructor(private readonly eventBus: EventBus) {}
 
     async doCoolStuff() {
         // create item
 
-        await this.eventBus.publish(new ItemCreated({ storeId }));
+        await this.eventBus.publish(new StoreCreated({ storeId }));
 
         // return item
     }
@@ -85,18 +83,16 @@ class SomeService {
 
 ### Create event handler
 
-Create a simple class which extends `PubsubHandler` and implements `IEventHandler` interface
-`PubsubHandler` - comes from `@goparrot/pubsub-event-bus`
-`IEventHandler` - comes from `@nestjs/cqrs`
+Create a simple class which extends `AbstractPubsubHandler` and is decorated with `PubsubEventHandler` (both imported from `@goparrot/pubsub-event-bus`).
 
 ```ts
-@PubsubEventHandler(StoreCreated)
-export class StoreCreatedHandler extends PubsubHandler implements IEventHandler {
-    handle(event: StoreCreated) {
-        console.log(`[${this.constructor.name}] ->`, event.payload());
-    }
+import { AbstractPubsubHandler, PubsubEventHandler } from '@goparrot/pubsub-event-bus';
 
-    exchange = (): string => 'store';
+@PubsubEventHandler(StoreCreated)
+export class StoreCreatedHandler extends AbstractPubsubHandler<StoreCreated> {
+    handle(event: StoreCreated) {
+        console.log(`[${this.constructor.name}] ->`, event.payload);
+    }
 }
 ```
 
@@ -108,31 +104,16 @@ Notice, Unlike regular Cqrs events handlers, PubSub EventHandler uses its own de
 @PubsubEventHandler(StoreCreated, UserCreated)
 ```
 
-or it may be listening for all events in desired exchange ('#' - fanout), just add a `Fanout` event:
-
-```ts
-@PubsubEventHandler(Fanout)
-```
-
-[Note] EventBus pushes the message through the NestJS EventBus and through the RabbitMQ. That means that this handler is still perfectly compatible with NestJS
-event handler, so it can be used by the same service which produces the event.
-
-MicroService 1 -> Produces Event MicroService 2 <- Consumes Event MicroService 3 <- Consumes Event MicroService 1 <- Consumes Event (just use
-default `@EventHandler` decorator and there is no need to extend `PubsubHandler` class)!
-
 ### Implement required methods:
 
 `handle` - central point where event payload will come
 
-`exchange` - exchange, consumer will be bound its queue to.
-
 ### Register event handler
 
-Register event handler you've just created as a module provider:
+Register the event handler as a module provider:
 
 ```ts
 @Module({
-    ...,
     providers: [StoreCreatedHandler],
 })
 export class AppModule {}
@@ -145,8 +126,8 @@ Once registered, event handler will start listening for incoming events.
 In order to emit an event with extra headers, just call the `withOptions({})` method and provide required configuration:
 
 ```ts
-this.eventBus.publish(
-    new StoreCreated('storeId').withOptions({
+await this.eventBus.publish(
+    new StoreCreated({ storeId: 'storeId' }).withOptions({
         persistent: false,
         priority: 100,
         headers: ['...'],
@@ -154,13 +135,13 @@ this.eventBus.publish(
 );
 ```
 
-The same goes for Event Handlers, you can define a method `withQueueConfig` in order to define queue configuration.
-
-Also, you can define a very specific events, it will be listening for, by declaring the `listenFor` method.
+The same goes for Event Handlers, queue configuration can be defined using `withQueueConfig` method.
 
 ```ts
+import { AbstractPubsubHandler, PubsubEventHandler } from '@goparrot/pubsub-event-bus';
+
 @PubsubEventHandler(StoreCreated)
-export class StoreCreatedHandler extends PubsubHandler implements IEventHandler<StoreCreated> {
+export class StoreCreatedHandler extends AbstractPubsubHandler<StoreCreated> {
     withQueueConfig = (): Options.AssertQueue => ({
         exclusive: true,
         durable: false,
