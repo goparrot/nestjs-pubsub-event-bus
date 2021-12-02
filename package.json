@@ -2,11 +2,48 @@
     "name": "@goparrot/pubsub-event-bus",
     "description": "NestJS EventBus extension for RabbitMQ PubSub",
     "version": "2.0.2",
-    "main": "src/index.js",
+    "author": "GoParrot",
+    "keywords": [
+        "NestJS",
+        "PubSub",
+        "EventBus",
+        "CqrsModule"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/goparrot/nestjs-pubsub-event-bus#readme",
+    "bugs": {
+        "url": "https://github.com/goparrot/nestjs-pubsub-event-bus/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/goparrot/nestjs-pubsub-event-bus.git"
+    },
+    "engines": {
+        "node": ">=14",
+        "npm": "^8"
+    },
+    "directories": {
+        "bin": "./bin",
+        "lib": "./src",
+        "test": "./test"
+    },
+    "lint-staged": {
+        "*.{ts,tsx,js,json}": [
+            "npm run format:base"
+        ],
+        "*.md": [
+            "npm run prettier:base"
+        ]
+    },
+    "config": {
+        "commitizen": {
+            "path": "cz-conventional-changelog"
+        }
+    },
     "scripts": {
         "commit": "git-cz",
         "prepare": "husky install",
-        "pre-commit": "npm run format:staged && tsc --project tsconfig.json && npm run build:dist && npm run lint",
+        "pre-commit": "git add . && run-p format:staged typecheck && run-p publish:dev:dry lint coverage",
         "prettier": "npm run prettier:base -- '**/**.+(md)'",
         "prettier:base": "prettier --ignore-path .eslintignore --write",
         "format": "npm run prettier && npm run lint -- --fix",
@@ -18,11 +55,13 @@
         "typecheck": "tsc -p tsconfig.json --noEmit",
         "test": "jest",
         "coverage": "jest --collect-coverage",
-        "build:dist": "rimraf dist && tsc --project tsconfig.compile.json && node bin/prepublish.js",
-        "check:tsc": "rimraf dist/* && tsc --project tsconfig.json && rimraf dist",
+        "build:dist": "rimraf dist/* && run-p build:dist:cjs build:dist:esm build:dist:types",
+        "build:dist:cjs": "tsc --project tsconfig.build-cjs.json",
+        "build:dist:esm": "tsc --project tsconfig.build-esm.json",
+        "build:dist:types": "tsc -b tsconfig.build-types.json",
         "prepublishOnly": "echo \"use 'npm run publish'\" && exit 1",
         "version:prerelease": "ts-node -T bin/npm-dev-version.ts",
-        "publish": "npm run build:dist && node bin/prepublish.js && npm publish dist",
+        "publish": "npm run build:dist && ts-node -T bin/prepublish.ts && npm publish ./dist",
         "publish:dev": "npm run version:prerelease && npm run publish --tag dev",
         "publish:dev:dry": "npm run publish --tag dev --dry-run",
         "preversion": "npm run pre-commit",
@@ -32,83 +71,46 @@
         "release:dry": "npm run publish:dev:dry && standard-version --dry-run",
         "github-release": "conventional-github-releaser -p angular"
     },
-    "author": "",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "git+ssh://git@github.com/goparrot/nestjs-pubsub-event-bus.git"
+    "peerDependencies": {
+        "@nestjs/common": "^7.0.0 || ^8.0.0",
+        "@nestjs/core": "^7.0.0 || ^8.0.0",
+        "@nestjs/cqrs": "^7.0.0 || ^8.0.0",
+        "amqp-connection-manager": "^3.2.0",
+        "amqplib": ">=0.5",
+        "reflect-metadata": ">=0.1.13"
     },
-    "keywords": [
-        "NestJS",
-        "PubSub",
-        "EventBus",
-        "CqrsModule"
-    ],
-    "directories": {
-        "bin": "./bin",
-        "lib": "./src",
-        "test": "./test"
+    "dependencies": {
+        "lodash": "^4.17.21",
+        "tslib": "^2.3.1"
     },
-    "engines": {
-        "node": "^12.10 | ^14.10 | ^16.13"
-    },
-    "lint-staged": {
-        "*.{ts,tsx,js,json}": [
-            "npm run format:base"
-        ],
-        "*.{md}": [
-            "npm run prettier:base"
-        ]
-    },
-    "config": {
-        "commitizen": {
-            "path": "cz-conventional-changelog"
-        }
-    },
-    "bugs": {
-        "url": "https://github.com/goparrot/nestjs-pubsub-event-bus/issues"
-    },
-    "homepage": "https://github.com/goparrot/nestjs-pubsub-event-bus#readme",
     "devDependencies": {
-        "@commitlint/cli": "^13.1.0",
-        "@commitlint/config-conventional": "^13.1.0",
-        "@goparrot/eslint-config": "^1.0.1",
-        "@nestjs/common": "^7.6.18",
-        "@nestjs/core": "^7.6.18",
-        "@nestjs/cqrs": "^7.0.1",
+        "@commitlint/cli": "^16.0.1",
+        "@commitlint/config-conventional": "^16.0.0",
+        "@goparrot/eslint-config": "^1.0.3",
+        "@nestjs/common": "^8.2.4",
+        "@nestjs/core": "^8.2.4",
+        "@nestjs/cqrs": "^8.0.1",
         "@types/amqplib": "0.8.2",
-        "@types/jest": "^27.0.1",
-        "@types/lodash": "^4.14.173",
+        "@types/jest": "^27.4.0",
+        "@types/lodash": "^4.14.178",
         "@types/minimist": "^1.2.2",
         "@types/semver": "^7.3.8",
-        "amqp-connection-manager": "^3.6.0",
+        "amqp-connection-manager": "^3.8.1",
         "amqplib": "^0.8.0",
-        "class-transformer": "0.3.1",
         "commitizen": "^4.2.4",
-        "conventional-changelog-cli": "^2.1.1",
+        "conventional-changelog-cli": "^2.2.2",
         "cz-conventional-changelog": "^3.3.0",
         "husky": "^7.0.2",
-        "jest": "^27.2.0",
-        "lint-staged": "^11.1.2",
-        "lodash": "^4.17.21",
+        "jest": "^27.4.5",
+        "lint-staged": "^12.1.5",
         "minimist": "^1.2.5",
+        "npm-run-all": "^4.1.5",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",
-        "rxjs": "^6.6.7",
         "semver": "^7.3.5",
         "standard-version": "^9.3.1",
-        "ts-jest": "^27.0.5",
+        "ts-jest": "^27.1.2",
         "ts-node": "^10.2.1",
-        "typescript": "^4.4.3"
-    },
-    "peerDependencies": {
-        "@nestjs/common": ">=7.*",
-        "@nestjs/core": ">=7.*",
-        "@nestjs/cqrs": ">=7.*",
-        "amqp-connection-manager": ">=3.2",
-        "amqplib": ">=0.5",
-        "reflect-metadata": ">=0.1",
-        "lodash": ">=4.17.21"
-    },
-    "dependencies": {}
+        "typescript": "^4.5.4"
+    }
 }
