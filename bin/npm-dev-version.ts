@@ -17,10 +17,14 @@ void (async (): Promise<void> => {
     const packageJsonPath = `${packageJsonDir}/package.json`;
     const packageJson = JSON.parse(readFileSync(packageJsonPath).toString());
     const { version } = packageJson;
-    const branchName: string = getCurrentGitBranch();
 
-    const ticketNumber: string | undefined = /^(feature|feat|hotfix|fix)\/(\d+)/gim.exec(branchName)?.[0]?.split('/').pop();
-    const semVer: SemVer = new SemVer(version);
+    if (!version) {
+        throw new Error(`Can't find package.json version`);
+    }
+
+    const branchName = getCurrentGitBranch();
+    const ticketNumber = /^(feature|feat|hotfix|fix)\/(\d+)/gim.exec(branchName)?.[0]?.split('/').pop();
+    const semVer = new SemVer(version);
 
     console.log('Input data', { packageJsonPath, branchName, ticketNumber, version: semVer.format() });
 
@@ -38,4 +42,6 @@ void (async (): Promise<void> => {
 
     packageJson.version = semVer.format();
     writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 4) + EOL);
-})();
+})().catch(() => {
+    process.exit(1);
+});

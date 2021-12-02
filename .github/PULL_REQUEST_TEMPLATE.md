@@ -2,7 +2,7 @@
   Thanks for creating a Pull Request! Before you submit, please make sure
   you've done the following:
 
-  - I read the contributing document at https://github.com/goparrot/geocoder/blob/master/CONTRIBUTING.md#contributing
+  - I read the contributing document at https://github.com/goparrot/nestjs-pubsub-event-bus/blob/master/CONTRIBUTING.md#contributing
 -->
 
 <!--
