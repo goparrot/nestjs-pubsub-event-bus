@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [12, 14, 16]
+        node-version: [14, 16]
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,6 +51,9 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Dry run of publishing
+        run: npm run publish:dev:dry
+
       - name: Lint code
         run: npm run lint
 
@@ -59,6 +62,6 @@ jobs:
 
       - name: Run Coveralls
         uses: coverallsapp/github-action@master
-        if: startsWith(matrix.node-version, '14.')
+        if: startsWith(matrix.node-version, '16.')
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
