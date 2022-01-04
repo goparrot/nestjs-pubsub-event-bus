@@ -1,3 +1,4 @@
+import type { OnModuleInit } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import type { ConfirmChannel } from 'amqplib';
 import type { IPubsubEventOptions } from '../decorator';
@@ -9,7 +10,7 @@ import { PubsubManager } from './PubsubManager';
 import { PubSubReflector } from './PubSubReflector';
 
 @Injectable()
-export class Producer extends PubsubManager {
+export class Producer extends PubsubManager implements OnModuleInit {
     /**
      * Set of exchanges where messages are published to
      */
@@ -17,6 +18,15 @@ export class Producer extends PubsubManager {
 
     constructor(private readonly reflector: PubSubReflector) {
         super();
+    }
+
+    async onModuleInit(): Promise<void> {
+        if (this.appInTestingMode()) {
+            return;
+        }
+
+        this.initConnectionIfRequired();
+        this.initChannelIfRequired();
     }
 
     /**
@@ -46,7 +56,11 @@ export class Producer extends PubsubManager {
             await this.channelWrapper.publish(exchange, routingKey, payload, headers);
             this.logger().log(`${message} -> PUBLISHED.`);
         } catch (e) {
-            this.logger().error(`${message} -> FAILED TO PUBLISH -> [${(e as Error).message}]`);
+            if (e instanceof Error) {
+                this.logger().error(`${message} -> FAILED TO PUBLISH -> [${e.message}]`, e.stack);
+            } else {
+                this.logger().error(`${message} -> FAILED TO PUBLISH -> [${JSON.stringify(e)}]`);
+            }
         }
     }
 

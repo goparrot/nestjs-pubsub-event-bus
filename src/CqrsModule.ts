@@ -1,7 +1,7 @@
 import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
-import type { ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
+import type { IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
@@ -18,22 +18,30 @@ import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPT
         PubSubReflector,
         {
             provide: ConnectionProvider,
-            useFactory: (options: ICqrsModuleOptions): ConnectionProvider => ConnectionProvider.forHosts(options.connections),
+            useFactory(options: ICqrsModuleOptions): ConnectionProvider {
+                return ConnectionProvider.forHosts(options.connections);
+            },
             inject: [CQRS_MODULE_OPTIONS],
         },
         {
             provide: LoggerProvider,
-            useFactory: (options: ICqrsModuleOptions): LoggerProvider => LoggerProvider.forLogger(options.logger || new Logger()),
+            useFactory(options: ICqrsModuleOptions): LoggerProvider {
+                return LoggerProvider.forLogger(options.logger || new Logger());
+            },
             inject: [CQRS_MODULE_OPTIONS],
         },
         {
             provide: ConfigProvider,
-            useFactory: (options: ICqrsModuleOptions): ConfigProvider => ConfigProvider.fromOptions(options),
+            useFactory(options: ICqrsModuleOptions): ConfigProvider {
+                return ConfigProvider.fromOptions(options);
+            },
             inject: [CQRS_MODULE_OPTIONS],
         },
         {
             provide: CQRS_MODULE_CONSUMER_OPTIONS,
-            useFactory: (options: ICqrsModuleOptions): unknown => ({ ...DEFAULT_CONSUMER_OPTIONS, ...options.config?.consumer }),
+            useFactory(options: ICqrsModuleOptions): IConsumerOptions {
+                return { ...DEFAULT_CONSUMER_OPTIONS, ...options.config?.consumer };
+            },
             inject: [CQRS_MODULE_OPTIONS],
         },
     ],

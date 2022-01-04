@@ -3,14 +3,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
-import type { AbstractSubscriptionEvent, BindingQueueOptions, IEventWrapper } from '../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, BindingQueueOptions, IEventWrapper } from '../interface';
 import { AbstractPubsubHandler, AutoAckEnum, IConsumerOptions } from '../interface';
 import { ConfigProvider } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
-
-type IPubsubHandler = AbstractPubsubHandler<AbstractSubscriptionEvent<any>>;
 
 @Injectable()
 export class Consumer extends PubsubManager {
@@ -40,26 +38,28 @@ export class Consumer extends PubsubManager {
      * @param eventWrappers - list of events with metadata to listen to
      * @param onMessage - a callback that receives an event message
      */
-    async consume(handler: IPubsubHandler, eventWrappers: IEventWrapper[], onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
+    async consume(handler: AbstractPubsubAnyEventHandler, eventWrappers: IEventWrapper[], onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
         if (this.appInTestingMode()) {
             return;
         }
 
+        this.initConnectionIfRequired();
+        this.initChannelIfRequired();
+
         const requiredExchanges: string[] = chain(eventWrappers)
             .map((event: IEventWrapper) => event.exchange)
+            .filter((exchange: string) => !this.exchanges.has(exchange))
             .uniq()
             .value();
 
-        const notAssertedExchanges: string[] = requiredExchanges.filter((exchange: string) => !this.exchanges.has(exchange));
-
-        notAssertedExchanges.forEach((exchange: string) => this.exchanges.add(exchange));
+        requiredExchanges.forEach((exchange: string) => this.exchanges.add(exchange));
 
         const queueName: string = handler.queue() ?? this.queue(handler);
         const bindingPatterns: string[] = eventWrappers.map((event: IEventWrapper) => this.extractBindingPattern(event));
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
-                ...notAssertedExchanges.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
+                ...requiredExchanges.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
                 channel.assertQueue(queueName, this.bindingOptions(handler.withQueueConfig())),
                 ...this.bindEvents(channel, queueName, eventWrappers),
                 channel.consume(queueName, (msg: ConsumeMessage | null) => {
@@ -81,7 +81,7 @@ export class Consumer extends PubsubManager {
         return customBindingPattern ?? customRoutingKey ?? toEventName(event.name);
     }
 
-    configureAutoAck(handler: Type<IPubsubHandler>, autoAck: AutoAckEnum): void {
+    configureAutoAck(handler: Type<AbstractPubsubAnyEventHandler>, autoAck: AutoAckEnum): void {
         switch (autoAck) {
             case AutoAckEnum.NEVER:
                 this.implementAckAndNack(handler);
@@ -99,7 +99,7 @@ export class Consumer extends PubsubManager {
         }
     }
 
-    addHandleCatch(handler: Type<IPubsubHandler>): void {
+    addHandleCatch(handler: Type<AbstractPubsubAnyEventHandler>): void {
         const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
         const logger: LoggerService = this.logger();
 
@@ -132,7 +132,7 @@ export class Consumer extends PubsubManager {
     /**
      * Queue that should be listened for events.
      */
-    protected queue(handler: IPubsubHandler): string {
+    protected queue(handler: AbstractPubsubAnyEventHandler): string {
         const pckName: string = (process.env.npm_package_name as string).split('/').pop() as string;
         const platform = pckName.replace(/[_-]/gi, '.');
 
@@ -158,7 +158,7 @@ export class Consumer extends PubsubManager {
         });
     }
 
-    private implementAckAndNack(handler: Type<IPubsubHandler>): void {
+    private implementAckAndNack(handler: Type<AbstractPubsubAnyEventHandler>): void {
         const ack: (message: Message) => void = this.ack.bind(this);
         const nack: (message: Message) => void = this.nack.bind(this);
 
@@ -183,7 +183,7 @@ export class Consumer extends PubsubManager {
         });
     }
 
-    private mockAckAndNack(handler: Type<IPubsubHandler>): void {
+    private mockAckAndNack(handler: Type<AbstractPubsubAnyEventHandler>): void {
         const logger: LoggerService = this.logger();
 
         Reflect.defineProperty(handler.prototype, 'ack', {
@@ -201,7 +201,7 @@ export class Consumer extends PubsubManager {
         });
     }
 
-    private addAlwaysPositiveAck(handler: Type<IPubsubHandler>): void {
+    private addAlwaysPositiveAck(handler: Type<AbstractPubsubAnyEventHandler>): void {
         const ack: (message: Message) => void = this.ack.bind(this);
         const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
 
@@ -220,7 +220,7 @@ export class Consumer extends PubsubManager {
         });
     }
 
-    private addAutoAck(handler: Type<IPubsubHandler>): void {
+    private addAutoAck(handler: Type<AbstractPubsubAnyEventHandler>): void {
         const ack: (message: Message) => void = this.ack.bind(this);
         const nack: (message: Message) => void = this.nack.bind(this);
         const originalMethod: IEventHandler['handle'] = handler.prototype.handle;

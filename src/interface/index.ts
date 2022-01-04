@@ -12,3 +12,4 @@ export * from './AbstractPubsubHandler';
 export * from './ICqrsModuleAsyncOptions';
 export * from './AbstractSubscriptionEvent';
 export * from './IPubsubEventHandlerMetadata';
+export * from './AbstractPubsubAnyEventHandler';
