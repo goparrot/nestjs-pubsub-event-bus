@@ -7,7 +7,7 @@ import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
-import type { AbstractPubsubEvent, AbstractPubsubHandler, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractPubsubEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
 import { AutoAckEnum } from '../interface';
 import { LoggerProvider } from '../provider';
 import { toEventName } from '../utils';
@@ -48,7 +48,11 @@ export class EventBus extends NestEventBus<IEvent> {
         return super.publishAll(events);
     }
 
-    async registerPubsubEvents(handlers: Type<AbstractPubsubHandler<AbstractPubsubEvent<any>>>[]): Promise<void> {
+    async registerPubsubEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): Promise<void> {
+        if (!handlers.length) {
+            this.logger().log('No pub-sub event handlers found');
+            return;
+        }
         const handlersWithEvents: IHandlerWrapper[] = this.filterValidHandlersWithEvents(handlers);
 
         for (const mappedHandler of handlersWithEvents) {
@@ -81,13 +85,13 @@ export class EventBus extends NestEventBus<IEvent> {
     protected async bindPubsubConsumer(handlerWrapper: IHandlerWrapper): Promise<void> {
         const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
 
-        const handlerInstance: AbstractPubsubHandler<AbstractPubsubEvent<any>> | undefined = this.moduleRefs.get(handler, { strict: false });
+        const handlerInstance: AbstractPubsubAnyEventHandler | undefined = this.moduleRefs.get(handler, { strict: false });
         if (!handlerInstance) {
             this.logger().warn(`Could not get event handler "${handler.name}" instance`);
             return;
         }
 
-        await this.consumer.consume(handlerInstance, eventWrappers, (message: ConsumeMessage | null): void => {
+        await this.consumer.consume(handlerInstance, eventWrappers, (message: ConsumeMessage | null) => {
             if (message) {
                 this.emitPubsubEvent(handlerWrapper, message);
             }
@@ -146,7 +150,7 @@ export class EventBus extends NestEventBus<IEvent> {
                     ...baseContext,
                     used: firstEventClass.name,
                     unused: unused.map((event: Type<AbstractPubsubEvent<any>>) => event.name),
-                    message: "Handler's event" + ' intersection' + ' detected',
+                    message: "Handler's event intersection detected",
                 }),
             );
         }
@@ -156,10 +160,10 @@ export class EventBus extends NestEventBus<IEvent> {
         this._pubSubPublisher.publishLocally(pubsubEvent);
     }
 
-    private filterValidHandlersWithEvents(handlers: Type<AbstractPubsubHandler<AbstractPubsubEvent<any>>>[]): IHandlerWrapper[] {
+    private filterValidHandlersWithEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): IHandlerWrapper[] {
         const validHandlersWithEvents: IHandlerWrapper[] = [];
 
-        handlers.forEach((handler: Type<AbstractPubsubHandler<AbstractPubsubEvent<any>>>) => {
+        handlers.forEach((handler: Type<AbstractPubsubAnyEventHandler>) => {
             const metadata: IPubsubEventHandlerMetadata | undefined = this.reflector.reflectHandlerMetadata(handler);
             if (!metadata) {
                 this.logger().error(`Event handler "${handler.name}" should be decorated with "${PubsubEventHandler.name}"`);
