@@ -1,7 +1,7 @@
 import type { LoggerService, OnModuleDestroy } from '@nestjs/common';
 import type { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import * as RabbitManager from 'amqp-connection-manager';
-import type { ConfirmChannel } from 'amqplib';
+import type { ConfirmChannel, Options as AmqpOptions } from 'amqplib';
 import type { ExchangeOptions } from '../interface';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
 
@@ -40,7 +40,12 @@ export abstract class PubsubManager implements OnModuleDestroy {
             reconnectTimeInSeconds: 5,
         })
             .on('connect', () => this.logger().log('Amqp connection established', this.constructor.name))
-            .on('disconnect', (arg: { err: Error }) => this.logger().error(arg.err.message, undefined, this.constructor.name));
+            .on('disconnect', (arg: { err: Error }) => this.logger().error(arg.err.message, undefined, this.constructor.name))
+            .on('connectFailed', (arg: { err: Error; url: string | AmqpOptions.Connect | undefined }) =>
+                this.logger().error(arg.err.message, undefined, this.constructor.name),
+            )
+            .on('blocked', (arg: { reason: string }) => this.logger().error(`Connection blocked, ${arg.reason}`, undefined, this.constructor.name))
+            .on('unblocked', () => this.logger().log('Connection unblocked', this.constructor.name));
     }
 
     protected initChannelIfRequired(): void {

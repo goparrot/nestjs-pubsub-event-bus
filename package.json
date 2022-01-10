@@ -75,7 +75,7 @@
         "@nestjs/common": "^7.0.0 || ^8.0.0",
         "@nestjs/core": "^7.0.0 || ^8.0.0",
         "@nestjs/cqrs": "^7.0.0 || ^8.0.0",
-        "amqp-connection-manager": "^3.2.0",
+        "amqp-connection-manager": "^3.2.0 || ^4.0.0",
         "amqplib": ">=0.5",
         "reflect-metadata": ">=0.1.13"
     },
@@ -95,7 +95,7 @@
         "@types/lodash": "^4.14.178",
         "@types/minimist": "^1.2.2",
         "@types/semver": "^7.3.8",
-        "amqp-connection-manager": "^3.8.1",
+        "amqp-connection-manager": "^4.0.0",
         "amqplib": "^0.8.0",
         "commitizen": "^4.2.4",
         "conventional-changelog-cli": "^2.2.2",
