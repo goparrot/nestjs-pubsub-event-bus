@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 
-- upgrade deps ([d6b0ec9](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/d6b0ec98aea15fdc111cdd5f4e8f6fb6c6c8be51))
+- upgrade deps ([117dd5e9](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/117dd5e9801a178463a0bde9fa8772c2df26bbc5))
 
 ### [2.0.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.0.1...v2.0.2) (2021-11-11)
 
