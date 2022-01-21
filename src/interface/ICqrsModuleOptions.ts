@@ -26,4 +26,11 @@ export interface ICqrsModuleOptions {
     isGlobal?: boolean;
 
     logger?: LoggerService;
+
+    /**
+     * Name of the connection to be displayed in the server logs and management UI. Final name will have a suffix `:producer` or `:consumer` depending on the
+     * connection purpose
+     * @example `service-name-${uuid.v4()}`
+     */
+    connectionName?: string;
 }
