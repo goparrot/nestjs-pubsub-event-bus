@@ -4,7 +4,7 @@ import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
 import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
-import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
+import { CQRS_CONNECTION_NAME, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
 
 @Module({
     imports: [NestCqrsModule],
@@ -44,6 +44,13 @@ import { CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPT
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
+        {
+            provide: CQRS_CONNECTION_NAME,
+            useFactory(options: ICqrsModuleOptions): string | undefined {
+                return options.connectionName;
+            },
+            inject: [CQRS_MODULE_OPTIONS],
+        },
     ],
     exports: [EventBus, CommandBus, QueryBus, Producer, Consumer],
 })
@@ -76,7 +83,7 @@ export class CqrsModule implements OnApplicationBootstrap {
                 {
                     provide: CQRS_MODULE_OPTIONS,
                     useFactory: options.useFactory,
-                    inject: options.inject || [],
+                    inject: options.inject,
                 },
             ],
         };
