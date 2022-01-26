@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.2.0...v2.3.0) (2022-01-26)
+
+
+### Features
+
+* add connection name option ([1b9d244](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/1b9d24402b32e6c4ef1655cc335179cbc1518efc))
+
 ## [2.2.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.1.0...v2.2.0) (2022-01-11)
 
 
