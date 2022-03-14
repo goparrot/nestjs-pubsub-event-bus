@@ -1,4 +1,5 @@
 import type { Type } from '@nestjs/common';
+import { EventsHandler } from '@nestjs/cqrs';
 import type { AbstractSubscriptionEvent, AutoAckEnum } from '../interface';
 import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 
@@ -16,17 +17,24 @@ export function PubsubEventHandler(...params: EventsWithOptions);
 export function PubsubEventHandler(...events: Type<AbstractSubscriptionEvent<any>>[]);
 
 export function PubsubEventHandler(...params: Type<AbstractSubscriptionEvent<any>>[] | EventsWithOptions): ClassDecorator {
-    if (!params.length) {
-        return Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, { events: [] });
-    }
-    const optionsOrEvent: IPubsubEventHandlerOptions | Type<AbstractSubscriptionEvent<any>> = params[params.length - 1];
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    return <TFunction extends Function>(target: TFunction): TFunction => {
+        if (!params.length) {
+            return Reflect.decorate([Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, { events: [] }), EventsHandler()], target) as TFunction;
+        }
 
-    if (typeof optionsOrEvent === 'object') {
-        return Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, {
-            ...optionsOrEvent,
-            events: params.slice(0, -1),
-        });
-    }
+        let options: IPubsubEventHandlerOptions = {};
+        let events: Type<AbstractSubscriptionEvent<any>>[];
 
-    return Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, { events: params });
+        const optionsOrEvent: IPubsubEventHandlerOptions | Type<AbstractSubscriptionEvent<any>> = params[params.length - 1];
+
+        if (typeof optionsOrEvent === 'object') {
+            options = optionsOrEvent;
+            events = params.slice(0, -1) as Type<AbstractSubscriptionEvent<any>>[];
+        } else {
+            events = params as Type<AbstractSubscriptionEvent<any>>[];
+        }
+
+        return Reflect.decorate([Reflect.metadata(PUBSUB_EVENT_HANDLER_METADATA, { ...options, events }), EventsHandler(...events)], target) as TFunction;
+    };
 }
