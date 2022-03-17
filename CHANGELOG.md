@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.3.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.1...v2.3.2) (2022-03-17)
+
+
+### Bug Fixes
+
+* **consumer:** match all to fan out events ([8429840](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/8429840d0e253e03bf0bfedb25a626a6358f98c2))
+
 ### [2.3.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.0...v2.3.1) (2022-03-14)
 
 
