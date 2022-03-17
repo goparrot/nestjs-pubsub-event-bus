@@ -5,6 +5,7 @@ import type { IEvent, IEventHandler } from '@nestjs/cqrs';
 import { EventBus as NestEventBus } from '@nestjs/cqrs';
 import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
+import { FAN_OUT_BINDING } from '../constant';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
 import type { AbstractPubsubAnyEventHandler, AbstractPubsubEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
@@ -120,7 +121,10 @@ export class EventBus extends NestEventBus<IEvent> {
             matchedEventWrappers = eventWrappers.filter((eventWrapper: IEventWrapper) => {
                 const bindingPattern: string = this.consumer.extractBindingPattern(eventWrapper);
 
-                return eventWrapper.exchange === message.fields.exchange && EventBus.checkTypeAgainstBinding(typeProperty, bindingPattern);
+                return (
+                    eventWrapper.exchange === message.fields.exchange &&
+                    (bindingPattern === FAN_OUT_BINDING || EventBus.checkTypeAgainstBinding(typeProperty, bindingPattern))
+                );
             });
         }
 
