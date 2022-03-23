@@ -2,12 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.3.3](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.2...v2.3.3) (2022-03-23)
+
+
+### Bug Fixes
+
+* **log:** log correct exchanges bound to queue ([975045d](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/975045d881577687aa5616feaadff6d568e50a1b))
+* remove event handler binding by event name ([33c5664](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/33c56645ce77bff9b5d0821de3ebc3bcc0f25372))
+
 ### [2.3.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.1...v2.3.2) (2022-03-17)
 
 
 ### Bug Fixes
 
-* **consumer:** match all to fan out events ([8429840](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/8429840d0e253e03bf0bfedb25a626a6358f98c2))
+* **consumer:** match all to fan out events ([0173f94](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/0173f94fc23cd049e3eed4bbf8fc3bf84da08c4c))
 
 ### [2.3.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.0...v2.3.1) (2022-03-14)
 
