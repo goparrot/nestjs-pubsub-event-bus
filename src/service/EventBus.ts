@@ -1,7 +1,7 @@
 import type { LoggerService, Type } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { IEvent, IEventHandler } from '@nestjs/cqrs';
+import type { IEvent } from '@nestjs/cqrs';
 import { EventBus as NestEventBus } from '@nestjs/cqrs';
 import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
@@ -61,7 +61,6 @@ export class EventBus extends NestEventBus<IEvent> {
 
             this.consumer.configureAutoAck(handler, autoAck);
             this.consumer.addHandleCatch(handler);
-            this.registerPubsubHandler(mappedHandler);
 
             await this.bindPubsubConsumer(mappedHandler);
         }
@@ -69,18 +68,6 @@ export class EventBus extends NestEventBus<IEvent> {
 
     protected logger(): LoggerService {
         return LoggerProvider.logger;
-    }
-
-    protected registerPubsubHandler(handlerWrapper: IHandlerWrapper): void {
-        const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
-
-        const instance: IEventHandler<IEvent> | undefined = this.moduleRefs.get(handler, { strict: false });
-        if (!instance) {
-            this.logger().warn(`Could not get event handler "${handler.name}" instance`);
-            return;
-        }
-
-        eventWrappers.forEach((eventWrapper: IEventWrapper) => this.bind(instance, eventWrapper.event.name));
     }
 
     protected async bindPubsubConsumer(handlerWrapper: IHandlerWrapper): Promise<void> {
