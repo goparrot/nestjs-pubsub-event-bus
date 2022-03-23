@@ -46,20 +46,21 @@ export class Consumer extends PubsubManager {
         this.initConnectionIfRequired();
         this.initChannelIfRequired();
 
-        const requiredExchanges: string[] = chain(eventWrappers)
-            .map((event: IEventWrapper) => event.exchange)
+        const handlerExchanges = eventWrappers.map((event: IEventWrapper) => event.exchange);
+
+        const exchangesToAssert: string[] = chain(handlerExchanges)
             .filter((exchange: string) => !this.exchanges.has(exchange))
             .uniq()
             .value();
 
-        requiredExchanges.forEach((exchange: string) => this.exchanges.add(exchange));
+        exchangesToAssert.forEach((exchange: string) => this.exchanges.add(exchange));
 
         const queueName: string = handler.queue() ?? this.queue(handler);
         const bindingPatterns: string[] = eventWrappers.map((event: IEventWrapper) => this.extractBindingPattern(event));
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
-                ...requiredExchanges.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
+                ...exchangesToAssert.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
                 channel.assertQueue(queueName, this.bindingOptions(handler.withQueueConfig())),
                 ...this.bindEvents(channel, queueName, eventWrappers),
                 channel.consume(queueName, (msg: ConsumeMessage | null) => {
@@ -71,7 +72,7 @@ export class Consumer extends PubsubManager {
                 }),
             ]);
 
-            this.logger().log(`Listening for "${bindingPatterns.join(', ')}" events from [${requiredExchanges.join(', ')} <- ${queueName}]`);
+            this.logger().log(`Listening for "${bindingPatterns.join(', ')}" events from [${handlerExchanges.join(', ')} <- ${queueName}]`);
         });
     }
 
