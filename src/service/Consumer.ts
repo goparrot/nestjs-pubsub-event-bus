@@ -3,14 +3,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper } from '../interface';
-import { AbstractPubsubHandler, AutoAckEnum, BindingQueueOptions, IConsumerOptions } from '../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, AutoAckEnum, IChannelWrapper, IEventWrapper } from '../interface';
+import { BindingQueueOptions, IConsumerOptions } from '../interface';
+import { CQRS_PREPARE_HANDLER_STRATEGIES, PrepareHandlerStrategies } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
 
 @Injectable()
-export class Consumer extends PubsubManager {
+export class Consumer extends PubsubManager implements IChannelWrapper {
     /**
      * Set of exchanges that handlers listen to
      */
@@ -19,6 +20,7 @@ export class Consumer extends PubsubManager {
     constructor(
         @Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions,
         @Inject(CQRS_BINDING_QUEUE_CONFIG) private readonly bindingQueueOptions: BindingQueueOptions,
+        @Inject(CQRS_PREPARE_HANDLER_STRATEGIES) private readonly prepareHandlerStrategies: PrepareHandlerStrategies,
     ) {
         super();
     }
@@ -85,21 +87,7 @@ export class Consumer extends PubsubManager {
     }
 
     configureAutoAck(handler: Type<AbstractPubsubAnyEventHandler>, autoAck: AutoAckEnum): void {
-        switch (autoAck) {
-            case AutoAckEnum.NEVER:
-                this.implementAckAndNack(handler);
-                break;
-
-            case AutoAckEnum.ALWAYS_ACK:
-                this.mockAckAndNack(handler);
-                this.addAlwaysPositiveAck(handler);
-                break;
-
-            case AutoAckEnum.ACK_AND_NACK:
-                this.mockAckAndNack(handler);
-                this.addAutoAck(handler);
-                break;
-        }
+        this.prepareHandlerStrategies[autoAck].process(handler, this);
     }
 
     addHandleCatch(handler: Type<AbstractPubsubAnyEventHandler>): void {
@@ -158,93 +146,6 @@ export class Consumer extends PubsubManager {
             const { exchange }: IEventWrapper = event;
 
             return channel.bindQueue(queueName, exchange, this.extractBindingPattern(event));
-        });
-    }
-
-    private implementAckAndNack(handler: Type<AbstractPubsubAnyEventHandler>): void {
-        const ack: (message: Message) => void = this.ack.bind(this);
-        const nack: (message: Message) => void = this.nack.bind(this);
-
-        Reflect.defineProperty(handler.prototype, 'ack', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'ack'),
-            value(event: AbstractSubscriptionEvent<any>): void {
-                const message: Message | undefined = event.message();
-                if (message) {
-                    ack(message);
-                }
-            },
-        });
-
-        Reflect.defineProperty(handler.prototype, 'nack', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'nack'),
-            value(event: AbstractSubscriptionEvent<any>): void {
-                const message: Message | undefined = event.message();
-                if (message) {
-                    nack(message);
-                }
-            },
-        });
-    }
-
-    private mockAckAndNack(handler: Type<AbstractPubsubAnyEventHandler>): void {
-        const logger: LoggerService = this.logger();
-
-        Reflect.defineProperty(handler.prototype, 'ack', {
-            ...Reflect.getOwnPropertyDescriptor(AbstractPubsubHandler.prototype, 'ack'),
-            value(_event: AbstractSubscriptionEvent<any>): void {
-                logger.warn('"ack" method should not be called with enabled automatic acknowledge', handler.name);
-            },
-        });
-
-        Reflect.defineProperty(handler.prototype, 'nack', {
-            ...Reflect.getOwnPropertyDescriptor(AbstractPubsubHandler.prototype, 'nack'),
-            value(_event: AbstractSubscriptionEvent<any>): void {
-                logger.warn('"nack" method should not be called with enabled automatic acknowledge', handler.name);
-            },
-        });
-    }
-
-    private addAlwaysPositiveAck(handler: Type<AbstractPubsubAnyEventHandler>): void {
-        const ack: (message: Message) => void = this.ack.bind(this);
-        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
-
-        Reflect.defineProperty(handler.prototype, 'handle', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
-            async value(event: AbstractSubscriptionEvent<any>): Promise<void> {
-                try {
-                    await originalMethod.apply(this, [event]);
-                } finally {
-                    const message: Message | undefined = event.message();
-                    if (message) {
-                        ack(message);
-                    }
-                }
-            },
-        });
-    }
-
-    private addAutoAck(handler: Type<AbstractPubsubAnyEventHandler>): void {
-        const ack: (message: Message) => void = this.ack.bind(this);
-        const nack: (message: Message) => void = this.nack.bind(this);
-        const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
-
-        Reflect.defineProperty(handler.prototype, 'handle', {
-            ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'handle'),
-            async value(event: AbstractSubscriptionEvent<any>): Promise<void> {
-                try {
-                    await originalMethod.apply(this, [event]);
-                    const message: Message | undefined = event.message();
-                    if (message) {
-                        ack(message);
-                    }
-                } catch (e) {
-                    const message: Message | undefined = event.message();
-                    if (message) {
-                        nack(message);
-                    }
-                    throw e;
-                }
-            },
         });
     }
 }

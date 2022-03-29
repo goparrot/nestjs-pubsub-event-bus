@@ -3,6 +3,7 @@ export * from './IEventWrapper';
 export * from './PublishOptions';
 export * from './ExchangeOptions';
 export * from './IHandlerWrapper';
+export * from './IChannelWrapper';
 export * from './IConsumerOptions';
 export * from './ICqrsModuleOptions';
 export * from './AbstractPubsubEvent';
