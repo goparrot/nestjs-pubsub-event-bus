@@ -7,3 +7,4 @@ export * from './CommandBus';
 export * from './PubsubManager';
 export * from './ExplorerService';
 export * from './PubSubReflector';
+export * from './handle-wrapper-strategy';

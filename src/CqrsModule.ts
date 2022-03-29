@@ -3,7 +3,7 @@ import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { ConnectionUrl } from 'amqp-connection-manager';
 import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions, PublishOptions } from './interface';
-import { LoggerProvider } from './provider';
+import { createPrepareHandlerStrategiesProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import {
     CQRS_BINDING_QUEUE_CONFIG,
@@ -78,6 +78,7 @@ import {
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
+        ...createPrepareHandlerStrategiesProviders(),
     ],
     exports: [EventBus, CommandBus, QueryBus, Producer, Consumer],
 })
