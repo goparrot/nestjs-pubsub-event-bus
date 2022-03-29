@@ -3,7 +3,6 @@ import type { BindingQueueOptions } from './BindingQueueOptions';
 import type { ExchangeOptions } from './ExchangeOptions';
 import type { IConsumerOptions } from './IConsumerOptions';
 import type { PublishOptions } from './PublishOptions';
-import type { PubsubExchangeType } from './PubsubExchangeType';
 
 interface ICqrsModuleOptionsConfig {
     exchange?: ExchangeOptions;
@@ -14,8 +13,6 @@ interface ICqrsModuleOptionsConfig {
 
 export interface ICqrsModuleOptions {
     connections: string[];
-
-    exchangeType?: PubsubExchangeType;
 
     config?: ICqrsModuleOptionsConfig;
 
