@@ -1,10 +1,11 @@
 import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
+import type { ConnectionUrl } from 'amqp-connection-manager';
 import type { IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
-import { ConfigProvider, ConnectionProvider, LoggerProvider } from './provider';
+import { ConfigProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
-import { CQRS_CONNECTION_NAME, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
+import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
 
 @Module({
     imports: [NestCqrsModule],
@@ -17,9 +18,9 @@ import { CQRS_CONNECTION_NAME, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS
         ExplorerService,
         PubSubReflector,
         {
-            provide: ConnectionProvider,
-            useFactory(options: ICqrsModuleOptions): ConnectionProvider {
-                return ConnectionProvider.forHosts(options.connections);
+            provide: CQRS_CONNECTION_URLS,
+            useFactory(options: ICqrsModuleOptions): ConnectionUrl | ConnectionUrl[] {
+                return options.connections;
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
