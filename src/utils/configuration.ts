@@ -5,6 +5,9 @@ export const DEFAULT_EXCHANGE_TYPE: PubsubExchangeType = 'topic';
 export const CQRS_MODULE_CONSUMER_OPTIONS = 'CQRS_MODULE_CONSUMER_OPTIONS';
 export const CQRS_MODULE_OPTIONS = 'CQRS_MODULE_OPTIONS';
 export const CQRS_CONNECTION_NAME = 'CQRS_CONNECTION_NAME';
+export const CQRS_CONNECTION_URLS = 'CQRS_CONNECTIONS';
+
+export const FAN_OUT_BINDING = '#';
 
 export const DEFAULT_EXCHANGE_CONFIGURATION: ExchangeOptions = {
     durable: true,

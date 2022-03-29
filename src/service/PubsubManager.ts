@@ -1,12 +1,12 @@
 import type { LoggerService, OnModuleDestroy } from '@nestjs/common';
 import { Inject, Optional } from '@nestjs/common';
-import type { AmqpConnectionManager, AmqpConnectionManagerOptions, ChannelWrapper } from 'amqp-connection-manager';
+import type { AmqpConnectionManager, AmqpConnectionManagerOptions, ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import * as RabbitManager from 'amqp-connection-manager';
 import type { ConfirmChannel, Options as AmqpOptions } from 'amqplib';
 import { set } from 'lodash';
 import type { ExchangeOptions } from '../interface';
-import { ConfigProvider, ConnectionProvider, LoggerProvider } from '../provider';
-import { CQRS_CONNECTION_NAME } from '../utils/configuration';
+import { ConfigProvider, LoggerProvider } from '../provider';
+import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS } from '../utils/configuration';
 
 /**
  * Review the work with connections & channels, according to these recommendations.
@@ -18,6 +18,9 @@ export abstract class PubsubManager implements OnModuleDestroy {
     @Inject(CQRS_CONNECTION_NAME)
     @Optional()
     private readonly connectionName?: string;
+
+    @Inject(CQRS_CONNECTION_URLS)
+    private readonly urls: ConnectionUrl | ConnectionUrl[];
 
     protected get connection(): AmqpConnectionManager {
         if (!this.connection$) {
@@ -53,7 +56,7 @@ export abstract class PubsubManager implements OnModuleDestroy {
             set(options, 'connectionOptions.clientProperties.connection_name', connectionName);
         }
 
-        this.connection$ = RabbitManager.connect(ConnectionProvider.connections, options)
+        this.connection$ = RabbitManager.connect(this.urls, options)
             .on('connect', () => this.logger().log('Amqp connection established', this.constructor.name))
             .on('disconnect', (arg: { err: Error }) => this.logger().error(arg.err.message, undefined, this.constructor.name))
             .on('connectFailed', (arg: { err: Error; url: string | AmqpOptions.Connect | undefined }) =>

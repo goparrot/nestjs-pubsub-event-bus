@@ -1,4 +1,4 @@
-import { FAN_OUT_BINDING } from '../constant';
+import { FAN_OUT_BINDING } from '../utils/configuration';
 import type { IPubsubEventOptions } from './PubsubEvent';
 import { PubsubEvent } from './PubsubEvent';
 
