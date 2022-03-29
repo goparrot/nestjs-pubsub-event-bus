@@ -2,10 +2,11 @@ import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { ConnectionUrl } from 'amqp-connection-manager';
-import type { ExchangeOptions, IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions, PublishOptions } from './interface';
-import { ConfigProvider, LoggerProvider } from './provider';
+import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions, PublishOptions } from './interface';
+import { LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import {
+    CQRS_BINDING_QUEUE_CONFIG,
     CQRS_CONNECTION_NAME,
     CQRS_CONNECTION_URLS,
     CQRS_EXCHANGE_CONFIG,
@@ -15,6 +16,7 @@ import {
     DEFAULT_CONSUMER_OPTIONS,
     DEFAULT_EXCHANGE_CONFIGURATION,
     DEFAULT_PRODUCER_CONFIGURATION,
+    DEFAULT_QUEUE_BINDING_CONFIGURATION,
 } from './utils/configuration';
 
 @Module({
@@ -38,13 +40,6 @@ import {
             provide: LoggerProvider,
             useFactory(options: ICqrsModuleOptions): LoggerProvider {
                 return LoggerProvider.forLogger(options.logger || new Logger());
-            },
-            inject: [CQRS_MODULE_OPTIONS],
-        },
-        {
-            provide: ConfigProvider,
-            useFactory(options: ICqrsModuleOptions): ConfigProvider {
-                return ConfigProvider.fromOptions(options);
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
@@ -73,6 +68,13 @@ import {
             provide: CQRS_PRODUCER_CONFIG,
             useFactory(options: ICqrsModuleOptions): PublishOptions {
                 return options.config?.producer || DEFAULT_PRODUCER_CONFIGURATION;
+            },
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: CQRS_BINDING_QUEUE_CONFIG,
+            useFactory(options: ICqrsModuleOptions): BindingQueueOptions {
+                return options.config?.bindings || DEFAULT_QUEUE_BINDING_CONFIGURATION;
             },
             inject: [CQRS_MODULE_OPTIONS],
         },

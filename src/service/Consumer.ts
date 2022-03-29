@@ -3,11 +3,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, BindingQueueOptions, IEventWrapper } from '../interface';
-import { AbstractPubsubHandler, AutoAckEnum, IConsumerOptions } from '../interface';
-import { ConfigProvider } from '../provider';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper } from '../interface';
+import { AbstractPubsubHandler, AutoAckEnum, BindingQueueOptions, IConsumerOptions } from '../interface';
 import { toEventName, toSnakeCase } from '../utils';
-import { CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
+import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
 
 @Injectable()
@@ -17,7 +16,10 @@ export class Consumer extends PubsubManager {
      */
     private readonly exchanges: Set<string> = new Set<string>();
 
-    constructor(@Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions) {
+    constructor(
+        @Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions,
+        @Inject(CQRS_BINDING_QUEUE_CONFIG) private readonly bindingQueueOptions: BindingQueueOptions,
+    ) {
         super();
     }
 
@@ -148,7 +150,7 @@ export class Consumer extends PubsubManager {
     }
 
     protected consumerConfiguration(): BindingQueueOptions {
-        return ConfigProvider.bindings;
+        return this.bindingQueueOptions;
     }
 
     private bindEvents(channel: ConfirmChannel, queueName: string, eventWrappers: IEventWrapper[]): Promise<Replies.Empty>[] {
