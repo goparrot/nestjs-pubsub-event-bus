@@ -3,9 +3,18 @@ import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { ConnectionUrl } from 'amqp-connection-manager';
 import type { IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
+import { ExchangeOptions } from './interface';
 import { ConfigProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
-import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_MODULE_OPTIONS, DEFAULT_CONSUMER_OPTIONS } from './utils/configuration';
+import {
+    CQRS_CONNECTION_NAME,
+    CQRS_CONNECTION_URLS,
+    CQRS_EXCHANGE_CONFIG,
+    CQRS_MODULE_CONSUMER_OPTIONS,
+    CQRS_MODULE_OPTIONS,
+    DEFAULT_CONSUMER_OPTIONS,
+    DEFAULT_EXCHANGE_CONFIGURATION,
+} from './utils/configuration';
 
 @Module({
     imports: [NestCqrsModule],
@@ -49,6 +58,13 @@ import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS, CQRS_MODULE_CONSUMER_OPTION
             provide: CQRS_CONNECTION_NAME,
             useFactory(options: ICqrsModuleOptions): string | undefined {
                 return options.connectionName;
+            },
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: CQRS_EXCHANGE_CONFIG,
+            useFactory(options: ICqrsModuleOptions): ExchangeOptions {
+                return options.config?.exchange || DEFAULT_EXCHANGE_CONFIGURATION;
             },
             inject: [CQRS_MODULE_OPTIONS],
         },

@@ -5,7 +5,6 @@ export * from './ExchangeOptions';
 export * from './IHandlerWrapper';
 export * from './IConsumerOptions';
 export * from './ICqrsModuleOptions';
-export * from './PubsubExchangeType';
 export * from './AbstractPubsubEvent';
 export * from './BindingQueueOptions';
 export * from './AbstractPubsubHandler';

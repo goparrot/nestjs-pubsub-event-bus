@@ -4,9 +4,9 @@ import type { AmqpConnectionManager, AmqpConnectionManagerOptions, ChannelWrappe
 import * as RabbitManager from 'amqp-connection-manager';
 import type { ConfirmChannel, Options as AmqpOptions } from 'amqplib';
 import { set } from 'lodash';
-import type { ExchangeOptions } from '../interface';
-import { ConfigProvider, LoggerProvider } from '../provider';
-import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS } from '../utils/configuration';
+import { ExchangeOptions } from '../interface';
+import { LoggerProvider } from '../provider';
+import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS, CQRS_EXCHANGE_CONFIG } from '../utils/configuration';
 
 /**
  * Review the work with connections & channels, according to these recommendations.
@@ -21,6 +21,9 @@ export abstract class PubsubManager implements OnModuleDestroy {
 
     @Inject(CQRS_CONNECTION_URLS)
     private readonly urls: ConnectionUrl | ConnectionUrl[];
+
+    @Inject(CQRS_EXCHANGE_CONFIG)
+    private readonly assertExchangeOptions: ExchangeOptions;
 
     protected get connection(): AmqpConnectionManager {
         if (!this.connection$) {
@@ -91,10 +94,7 @@ export abstract class PubsubManager implements OnModuleDestroy {
     }
 
     protected exchangeOptions(extra: ExchangeOptions = {}): ExchangeOptions {
-        return {
-            ...ConfigProvider.exchange,
-            ...extra,
-        };
+        return { ...this.assertExchangeOptions, ...extra };
     }
 
     protected appInTestingMode = (): boolean => process.env.NODE_ENV === 'test';
