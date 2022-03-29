@@ -2,8 +2,7 @@ import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { ConnectionUrl } from 'amqp-connection-manager';
-import type { IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions } from './interface';
-import { ExchangeOptions } from './interface';
+import type { ExchangeOptions, IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions, PublishOptions } from './interface';
 import { ConfigProvider, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import {
@@ -12,8 +11,10 @@ import {
     CQRS_EXCHANGE_CONFIG,
     CQRS_MODULE_CONSUMER_OPTIONS,
     CQRS_MODULE_OPTIONS,
+    CQRS_PRODUCER_CONFIG,
     DEFAULT_CONSUMER_OPTIONS,
     DEFAULT_EXCHANGE_CONFIGURATION,
+    DEFAULT_PRODUCER_CONFIGURATION,
 } from './utils/configuration';
 
 @Module({
@@ -65,6 +66,13 @@ import {
             provide: CQRS_EXCHANGE_CONFIG,
             useFactory(options: ICqrsModuleOptions): ExchangeOptions {
                 return options.config?.exchange || DEFAULT_EXCHANGE_CONFIGURATION;
+            },
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: CQRS_PRODUCER_CONFIG,
+            useFactory(options: ICqrsModuleOptions): PublishOptions {
+                return options.config?.producer || DEFAULT_PRODUCER_CONFIGURATION;
             },
             inject: [CQRS_MODULE_OPTIONS],
         },

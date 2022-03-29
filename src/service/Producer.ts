@@ -1,11 +1,12 @@
 import type { OnModuleInit } from '@nestjs/common';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { ConfirmChannel } from 'amqplib';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent } from '../decorator';
-import type { AbstractPubsubEvent, PublishOptions } from '../interface';
-import { ConfigProvider } from '../provider';
+import type { AbstractPubsubEvent } from '../interface';
+import { PublishOptions } from '../interface';
 import { toEventName } from '../utils';
+import { CQRS_PRODUCER_CONFIG } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
 import { PubSubReflector } from './PubSubReflector';
 
@@ -16,7 +17,7 @@ export class Producer extends PubsubManager implements OnModuleInit {
      */
     private readonly exchanges: Set<string> = new Set<string>();
 
-    constructor(private readonly reflector: PubSubReflector) {
+    constructor(private readonly reflector: PubSubReflector, @Inject(CQRS_PRODUCER_CONFIG) private readonly producerOptions: PublishOptions) {
         super();
     }
 
@@ -72,6 +73,6 @@ export class Producer extends PubsubManager implements OnModuleInit {
     }
 
     protected producerConfiguration(): PublishOptions {
-        return ConfigProvider.producer;
+        return this.producerOptions;
     }
 }
