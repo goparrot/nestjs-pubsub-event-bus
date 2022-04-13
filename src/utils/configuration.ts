@@ -27,4 +27,5 @@ export const DEFAULT_QUEUE_BINDING_CONFIGURATION: BindingQueueOptions = {
 
 export const DEFAULT_CONSUMER_OPTIONS: IConsumerOptions = {
     prefetchPerConsumer: 10,
+    prefetchPerChannel: 100,
 };
