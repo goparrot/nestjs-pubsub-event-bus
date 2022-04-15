@@ -1,12 +1,13 @@
 import type { LoggerService, OnModuleDestroy } from '@nestjs/common';
 import { Inject, Optional } from '@nestjs/common';
-import type { AmqpConnectionManager, AmqpConnectionManagerOptions, ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
+import type { AmqpConnectionManager, ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import * as RabbitManager from 'amqp-connection-manager';
+import { AmqpConnectionManagerOptions } from 'amqp-connection-manager';
 import type { ConfirmChannel, Options as AmqpOptions } from 'amqplib';
-import { set } from 'lodash';
+import { cloneDeep, set } from 'lodash';
 import { ExchangeOptions } from '../interface';
 import { LoggerProvider } from '../provider';
-import { CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS, CQRS_EXCHANGE_CONFIG } from '../utils/configuration';
+import { CQRS_CONNECTION_MANAGER_OPTIONS, CQRS_CONNECTION_NAME, CQRS_CONNECTION_URLS, CQRS_EXCHANGE_CONFIG } from '../utils/configuration';
 
 /**
  * Review the work with connections & channels, according to these recommendations.
@@ -24,6 +25,9 @@ export abstract class PubsubManager implements OnModuleDestroy {
 
     @Inject(CQRS_EXCHANGE_CONFIG)
     private readonly assertExchangeOptions: ExchangeOptions;
+
+    @Inject(CQRS_CONNECTION_MANAGER_OPTIONS)
+    private readonly connectionManagerOptions: AmqpConnectionManagerOptions;
 
     protected get connection(): AmqpConnectionManager {
         if (!this.connection$) {
@@ -48,12 +52,9 @@ export abstract class PubsubManager implements OnModuleDestroy {
             return;
         }
 
-        const options: AmqpConnectionManagerOptions = {
-            heartbeatIntervalInSeconds: 5,
-            reconnectTimeInSeconds: 5,
-        };
+        const options: AmqpConnectionManagerOptions = cloneDeep(this.connectionManagerOptions);
 
-        if (this.connectionName) {
+        if (!options.connectionOptions?.clientProperties.connection_name && this.connectionName) {
             const connectionName = `${this.connectionName}:${this.constructor.name.toLowerCase()}`;
 
             set(options, 'connectionOptions.clientProperties.connection_name', connectionName);

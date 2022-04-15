@@ -1,8 +1,8 @@
 import type { Type } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent } from '../../interface';
-import { AutoAckEnum, IChannelWrapper } from '../../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IChannelWrapper } from '../../interface';
+import { AutoAckEnum } from '../../interface';
 import { AbstractHandleWrapperStrategy } from './AbstractHandleWrapperStrategy';
 
 @Injectable()
