@@ -1,4 +1,5 @@
 import type { LoggerService } from '@nestjs/common';
+import type { AmqpConnectionManagerOptions } from 'amqp-connection-manager';
 import type { BindingQueueOptions } from './BindingQueueOptions';
 import type { ExchangeOptions } from './ExchangeOptions';
 import type { IConsumerOptions } from './IConsumerOptions';
@@ -9,6 +10,7 @@ interface ICqrsModuleOptionsConfig {
     consumer?: IConsumerOptions;
     producer?: PublishOptions;
     bindings?: BindingQueueOptions;
+    connectionManagerOptions?: AmqpConnectionManagerOptions;
 }
 
 export interface ICqrsModuleOptions {

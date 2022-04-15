@@ -1,18 +1,20 @@
 import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
-import type { ConnectionUrl } from 'amqp-connection-manager';
+import type { AmqpConnectionManagerOptions, ConnectionUrl } from 'amqp-connection-manager';
 import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions, PublishOptions } from './interface';
 import { createPrepareHandlerStrategiesProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import {
     CQRS_BINDING_QUEUE_CONFIG,
+    CQRS_CONNECTION_MANAGER_OPTIONS,
     CQRS_CONNECTION_NAME,
     CQRS_CONNECTION_URLS,
     CQRS_EXCHANGE_CONFIG,
     CQRS_MODULE_CONSUMER_OPTIONS,
     CQRS_MODULE_OPTIONS,
     CQRS_PRODUCER_CONFIG,
+    DEFAULT_CONNECTION_MANAGER_OPTIONS,
     DEFAULT_CONSUMER_OPTIONS,
     DEFAULT_EXCHANGE_CONFIGURATION,
     DEFAULT_PRODUCER_CONFIGURATION,
@@ -60,21 +62,28 @@ import {
         {
             provide: CQRS_EXCHANGE_CONFIG,
             useFactory(options: ICqrsModuleOptions): ExchangeOptions {
-                return options.config?.exchange || DEFAULT_EXCHANGE_CONFIGURATION;
+                return { ...DEFAULT_EXCHANGE_CONFIGURATION, ...options.config?.exchange };
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
         {
             provide: CQRS_PRODUCER_CONFIG,
             useFactory(options: ICqrsModuleOptions): PublishOptions {
-                return options.config?.producer || DEFAULT_PRODUCER_CONFIGURATION;
+                return { ...DEFAULT_PRODUCER_CONFIGURATION, ...options.config?.producer };
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
         {
             provide: CQRS_BINDING_QUEUE_CONFIG,
             useFactory(options: ICqrsModuleOptions): BindingQueueOptions {
-                return options.config?.bindings || DEFAULT_QUEUE_BINDING_CONFIGURATION;
+                return { ...DEFAULT_QUEUE_BINDING_CONFIGURATION, ...options.config?.bindings };
+            },
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: CQRS_CONNECTION_MANAGER_OPTIONS,
+            useFactory(options: ICqrsModuleOptions): AmqpConnectionManagerOptions {
+                return { ...DEFAULT_CONNECTION_MANAGER_OPTIONS, ...options.config?.connectionManagerOptions };
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
