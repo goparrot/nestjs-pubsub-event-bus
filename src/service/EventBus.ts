@@ -8,7 +8,6 @@ import { escapeRegExp, omit } from 'lodash';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
 import type { AbstractPubsubAnyEventHandler, AbstractPubsubEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
-import { AutoAckEnum } from '../interface';
 import { LoggerProvider } from '../provider';
 import { toEventName } from '../utils';
 import { FAN_OUT_BINDING } from '../utils/configuration';
@@ -49,7 +48,7 @@ export class EventBus extends NestEventBus<IEvent> {
         return super.publishAll(events);
     }
 
-    async registerPubsubEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): Promise<void> {
+    async registerPubSubEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): Promise<void> {
         if (!handlers.length) {
             this.logger().log('No pub-sub event handlers found');
             return;
@@ -57,12 +56,10 @@ export class EventBus extends NestEventBus<IEvent> {
         const handlersWithEvents: IHandlerWrapper[] = this.filterValidHandlersWithEvents(handlers);
 
         for (const mappedHandler of handlersWithEvents) {
-            const { handler, autoAck = AutoAckEnum.ALWAYS_ACK }: IHandlerWrapper = mappedHandler;
+            this.consumer.configureAutoAck(mappedHandler);
+            this.consumer.addHandleCatch(mappedHandler);
 
-            this.consumer.configureAutoAck(handler, autoAck);
-            this.consumer.addHandleCatch(handler);
-
-            await this.bindPubsubConsumer(mappedHandler);
+            await this.bindPubSubConsumer(mappedHandler);
         }
     }
 
@@ -70,23 +67,15 @@ export class EventBus extends NestEventBus<IEvent> {
         return LoggerProvider.logger;
     }
 
-    protected async bindPubsubConsumer(handlerWrapper: IHandlerWrapper): Promise<void> {
-        const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
-
-        const handlerInstance: AbstractPubsubAnyEventHandler | undefined = this.moduleRefs.get(handler, { strict: false });
-        if (!handlerInstance) {
-            this.logger().warn(`Could not get event handler "${handler.name}" instance`);
-            return;
-        }
-
-        await this.consumer.consume(handlerInstance, eventWrappers, (message: ConsumeMessage | null) => {
+    protected async bindPubSubConsumer(handlerWrapper: IHandlerWrapper): Promise<void> {
+        await this.consumer.consume(handlerWrapper, (message: ConsumeMessage | null) => {
             if (message) {
-                this.emitPubsubEvent(handlerWrapper, message);
+                this.emitPubSubEvent(handlerWrapper, message);
             }
         });
     }
 
-    protected emitPubsubEvent(handlerWrapper: IHandlerWrapper, message: ConsumeMessage): void {
+    protected emitPubSubEvent(handlerWrapper: IHandlerWrapper, message: ConsumeMessage): void {
         const { handler, eventWrappers }: IHandlerWrapper = handlerWrapper;
         const typeProperty: string | unknown = message.properties.type;
 
@@ -146,9 +135,9 @@ export class EventBus extends NestEventBus<IEvent> {
             );
         }
 
-        const pubsubEvent: AbstractPubsubEvent<any> = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
+        const pubSubEvent: AbstractPubsubEvent<any> = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
 
-        this._pubSubPublisher.publishLocally(pubsubEvent);
+        this._pubSubPublisher.publishLocally(pubSubEvent);
     }
 
     private filterValidHandlersWithEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): IHandlerWrapper[] {
@@ -173,7 +162,7 @@ export class EventBus extends NestEventBus<IEvent> {
                 eventWrappers.push({ ...metadata, event });
             });
 
-            validHandlersWithEvents.push({ ...omit(metadata, 'events'), handler, eventWrappers: eventWrappers });
+            validHandlersWithEvents.push({ handler: handler, eventWrappers, options: omit(metadata, 'events') });
         });
 
         return validHandlersWithEvents;

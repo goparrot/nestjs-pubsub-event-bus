@@ -1,14 +1,8 @@
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { AbstractSubscriptionEvent } from './AbstractSubscriptionEvent';
-import type { BindingQueueOptions } from './BindingQueueOptions';
 
 export abstract class AbstractPubsubHandler<T extends AbstractSubscriptionEvent<any>> implements IEventHandler<T> {
     abstract handle(event: T): void | Promise<void>;
-
-    queue = (): string | undefined => undefined;
-
-    // Queue binding options.
-    withQueueConfig = (): BindingQueueOptions => ({});
 
     /**
      * Positively acknowledge event.
