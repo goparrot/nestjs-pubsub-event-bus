@@ -134,6 +134,6 @@ export class CqrsModule implements OnApplicationBootstrap {
         this.eventsBus.registerSagas(sagas);
         this.eventsBus.register(events);
 
-        await this.eventsBus.registerPubsubEvents(this.explorerService.pubsubEvents());
+        await this.eventsBus.registerPubSubEvents(this.explorerService.pubsubEvents());
     }
 }

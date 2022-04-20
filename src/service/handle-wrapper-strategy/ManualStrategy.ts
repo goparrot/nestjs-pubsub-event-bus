@@ -1,12 +1,13 @@
-import type { Type } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IChannelWrapper } from '../../interface';
+import type { AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { AutoAckEnum } from '../../interface';
 import { AbstractHandleWrapperStrategy } from './AbstractHandleWrapperStrategy';
 
 @Injectable()
 export class ManualStrategy extends AbstractHandleWrapperStrategy {
-    private implementAckAndNack(handler: Type<AbstractPubsubAnyEventHandler>, channelWrapper: IChannelWrapper): void {
+    private implementAckAndNack(handlerWrapper: IHandlerWrapper, channelWrapper: IChannelWrapper): void {
+        const { handler } = handlerWrapper;
+
         Reflect.defineProperty(handler.prototype, 'ack', {
             ...Reflect.getOwnPropertyDescriptor(handler.prototype, 'ack'),
             value(event: AbstractSubscriptionEvent<any>): void {
@@ -30,7 +31,7 @@ export class ManualStrategy extends AbstractHandleWrapperStrategy {
 
     readonly strategy = AutoAckEnum.NEVER;
 
-    process(handler: Type<AbstractPubsubAnyEventHandler>, channelWrapper: IChannelWrapper): void {
-        this.implementAckAndNack(handler, channelWrapper);
+    process(handlerWrapper: IHandlerWrapper, channelWrapper: IChannelWrapper): void {
+        this.implementAckAndNack(handlerWrapper, channelWrapper);
     }
 }

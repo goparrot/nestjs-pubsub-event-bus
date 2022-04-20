@@ -1,5 +1,5 @@
-import type { LoggerService, Type } from '@nestjs/common';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, AutoAckEnum, IChannelWrapper } from '../../interface';
+import type { LoggerService } from '@nestjs/common';
+import type { AbstractSubscriptionEvent, AutoAckEnum, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { AbstractPubsubHandler } from '../../interface';
 import { LoggerProvider } from '../../provider';
 
@@ -8,7 +8,8 @@ export abstract class AbstractHandleWrapperStrategy {
         return LoggerProvider.logger;
     }
 
-    protected mockAckAndNack(handler: Type<AbstractPubsubAnyEventHandler>): void {
+    protected mockAckAndNack(handlerWrapper: IHandlerWrapper): void {
+        const { handler } = handlerWrapper;
         const logger = this.logger;
 
         Reflect.defineProperty(handler.prototype, 'ack', {
@@ -28,5 +29,5 @@ export abstract class AbstractHandleWrapperStrategy {
 
     abstract readonly strategy: AutoAckEnum;
 
-    abstract process(handler: Type<AbstractPubsubAnyEventHandler>, channelWrapper: IChannelWrapper): void;
+    abstract process(handlerWrapper: IHandlerWrapper, channelWrapper: IChannelWrapper): void;
 }

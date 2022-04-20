@@ -1,10 +1,10 @@
-import type { LoggerService, Type } from '@nestjs/common';
+import type { LoggerService } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, AutoAckEnum, IChannelWrapper, IEventWrapper } from '../interface';
-import { BindingQueueOptions, IConsumerOptions } from '../interface';
+import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper } from '../interface';
+import { AutoAckEnum, BindingQueueOptions, IConsumerOptions } from '../interface';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, PrepareHandlerStrategies } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
@@ -38,14 +38,14 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     /**
      * Listen for an event and consume its message payload
      *
-     * @param handler - event handler
-     * @param eventWrappers - list of events with metadata to listen to
+     * @param handlerWrapper - event handler wrapper
      * @param onMessage - a callback that receives an event message
      */
-    async consume(handler: AbstractPubsubAnyEventHandler, eventWrappers: IEventWrapper[], onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
+    async consume(handlerWrapper: IHandlerWrapper, onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
         if (this.appInTestingMode()) {
             return;
         }
+        const { eventWrappers, options } = handlerWrapper;
 
         this.initConnectionIfRequired();
         this.initChannelIfRequired();
@@ -59,13 +59,13 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
         exchangesToAssert.forEach((exchange: string) => this.exchanges.add(exchange));
 
-        const queueName: string = handler.queue() ?? this.queue(handler);
+        const queueName: string = options.queue ?? this.queue(handlerWrapper);
         const bindingPatterns: string[] = eventWrappers.map((event: IEventWrapper) => this.extractBindingPattern(event));
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
                 ...exchangesToAssert.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
-                channel.assertQueue(queueName, this.bindingOptions(handler.withQueueConfig())),
+                channel.assertQueue(queueName, this.bindingOptions(options.bindingQueueOptions)),
                 ...this.bindEvents(channel, queueName, eventWrappers),
                 channel.consume(queueName, (msg: ConsumeMessage | null) => {
                     try {
@@ -86,11 +86,12 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         return customBindingPattern ?? customRoutingKey ?? toEventName(event.name);
     }
 
-    configureAutoAck(handler: Type<AbstractPubsubAnyEventHandler>, autoAck: AutoAckEnum): void {
-        this.prepareHandlerStrategies[autoAck].process(handler, this);
+    configureAutoAck(wrapper: IHandlerWrapper): void {
+        this.prepareHandlerStrategies[wrapper.options.autoAck ?? AutoAckEnum.ALWAYS_ACK].process(wrapper, this);
     }
 
-    addHandleCatch(handler: Type<AbstractPubsubAnyEventHandler>): void {
+    addHandleCatch(handlerWrapper: IHandlerWrapper): void {
+        const { handler } = handlerWrapper;
         const originalMethod: IEventHandler['handle'] = handler.prototype.handle;
         const logger: LoggerService = this.logger();
 
@@ -123,11 +124,11 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     /**
      * Queue that should be listened for events.
      */
-    protected queue(handler: AbstractPubsubAnyEventHandler): string {
+    protected queue(handlerWrapper: IHandlerWrapper): string {
         const pckName: string = (process.env.npm_package_name as string).split('/').pop() as string;
         const platform = pckName.replace(/[_-]/gi, '.');
 
-        return [platform, toSnakeCase(handler.constructor.name)].join(':');
+        return [platform, toSnakeCase(handlerWrapper.handler.name)].join(':');
     }
 
     protected bindingOptions(extra: BindingQueueOptions = {}): BindingQueueOptions {

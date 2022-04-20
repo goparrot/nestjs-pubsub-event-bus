@@ -1,6 +1,6 @@
 import type { Type } from '@nestjs/common';
 import { EventsHandler } from '@nestjs/cqrs';
-import type { AbstractSubscriptionEvent, AutoAckEnum } from '../interface';
+import type { AbstractSubscriptionEvent, AutoAckEnum, BindingQueueOptions } from '../interface';
 import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 
 export interface IPubsubEventHandlerOptions {
@@ -9,6 +9,16 @@ export interface IPubsubEventHandlerOptions {
      * @default ALWAYS_ACK
      */
     autoAck?: AutoAckEnum;
+
+    /**
+     * Custom queue name
+     */
+    queue?: string;
+
+    /**
+     * Queue binding options
+     */
+    bindingQueueOptions?: BindingQueueOptions;
 }
 
 export type EventsWithOptions = [...Type<AbstractSubscriptionEvent<any>>[], IPubsubEventHandlerOptions];
