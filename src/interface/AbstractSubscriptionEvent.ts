@@ -1,5 +1,6 @@
 import type { IEvent } from '@nestjs/cqrs';
 import type { Message } from 'amqplib';
+import { RETRY_COUNT_HEADER } from '../utils/retry-constants';
 
 export abstract class AbstractSubscriptionEvent<T extends Record<string, any> | Buffer> implements IEvent {
     #message: Message | undefined;
@@ -13,4 +14,8 @@ export abstract class AbstractSubscriptionEvent<T extends Record<string, any> | 
 
         return this;
     };
+
+    get retryCount(): number {
+        return this.#message?.properties.headers[RETRY_COUNT_HEADER] ?? 0;
+    }
 }

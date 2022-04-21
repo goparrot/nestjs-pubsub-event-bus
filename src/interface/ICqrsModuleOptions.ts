@@ -3,6 +3,7 @@ import type { AmqpConnectionManagerOptions } from 'amqp-connection-manager';
 import type { BindingQueueOptions } from './BindingQueueOptions';
 import type { ExchangeOptions } from './ExchangeOptions';
 import type { IConsumerOptions } from './IConsumerOptions';
+import type { IRetryOptions } from './IRetryOptions';
 import type { PublishOptions } from './PublishOptions';
 
 interface ICqrsModuleOptionsConfig {
@@ -32,4 +33,6 @@ export interface ICqrsModuleOptions {
      * @example `service-name-${uuid.v4()}`
      */
     connectionName?: string;
+
+    retryOptions?: IRetryOptions;
 }

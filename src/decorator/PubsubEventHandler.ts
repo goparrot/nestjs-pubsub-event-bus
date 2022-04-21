@@ -1,6 +1,6 @@
 import type { Type } from '@nestjs/common';
 import { EventsHandler } from '@nestjs/cqrs';
-import type { AbstractSubscriptionEvent, AutoAckEnum, BindingQueueOptions } from '../interface';
+import type { AbstractSubscriptionEvent, AutoAckEnum, BindingQueueOptions, IRetryOptions } from '../interface';
 import { PUBSUB_EVENT_HANDLER_METADATA } from './constant';
 
 export interface IPubsubEventHandlerOptions {
@@ -19,6 +19,11 @@ export interface IPubsubEventHandlerOptions {
      * Queue binding options
      */
     bindingQueueOptions?: BindingQueueOptions;
+
+    /**
+     * Options for the retry mechanism. Only applicable when `autoAck` is `AUTO_RETRY`
+     */
+    retryOptions?: IRetryOptions;
 }
 
 export type EventsWithOptions = [...Type<AbstractSubscriptionEvent<any>>[], IPubsubEventHandlerOptions];

@@ -3,11 +3,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
-import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper } from '../interface';
-import { AutoAckEnum, BindingQueueOptions, IConsumerOptions } from '../interface';
+import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
+import { AutoAckEnum, BindingQueueOptions, IConsumerOptions, IRetryOptions } from '../interface';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, PrepareHandlerStrategies } from '../provider';
-import { toEventName, toSnakeCase } from '../utils';
-import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS } from '../utils/configuration';
+import { generateQueueName, toEventName, toSnakeCase } from '../utils';
+import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_RETRY_OPTIONS } from '../utils/configuration';
+import { DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME } from '../utils/retry-constants';
 import { PubsubManager } from './PubsubManager';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     private readonly exchanges: Set<string> = new Set<string>();
 
     constructor(
+        @Inject(CQRS_RETRY_OPTIONS) private readonly rootRetryOptions: IRetryOptions,
         @Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions,
         @Inject(CQRS_BINDING_QUEUE_CONFIG) private readonly bindingQueueOptions: BindingQueueOptions,
         @Inject(CQRS_PREPARE_HANDLER_STRATEGIES) private readonly prepareHandlerStrategies: PrepareHandlerStrategies,
@@ -45,12 +47,12 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         if (this.appInTestingMode()) {
             return;
         }
-        const { eventWrappers, options } = handlerWrapper;
+        const { handler, eventWrappers, options } = handlerWrapper;
 
         this.initConnectionIfRequired();
         this.initChannelIfRequired();
 
-        const handlerExchanges = eventWrappers.map((event: IEventWrapper) => event.exchange);
+        const handlerExchanges = eventWrappers.map((event: IEventWrapper) => event.options.exchange);
 
         const exchangesToAssert: string[] = chain(handlerExchanges)
             .filter((exchange: string) => !this.exchanges.has(exchange))
@@ -59,7 +61,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
         exchangesToAssert.forEach((exchange: string) => this.exchanges.add(exchange));
 
-        const queueName: string = options.queue ?? this.queue(handlerWrapper);
+        const queueName: string = options.queue ?? generateQueueName(handler);
         const bindingPatterns: string[] = eventWrappers.map((event: IEventWrapper) => this.extractBindingPattern(event));
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
@@ -81,7 +83,10 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     }
 
     extractBindingPattern(mappedEvent: IEventWrapper): string {
-        const { customBindingPattern, customRoutingKey, event }: IEventWrapper = mappedEvent;
+        const {
+            event,
+            options: { customBindingPattern, customRoutingKey },
+        }: IEventWrapper = mappedEvent;
 
         return customBindingPattern ?? customRoutingKey ?? toEventName(event.name);
     }
@@ -121,6 +126,50 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         this.channelWrapper.nack(message);
     }
 
+    async publish(exchange: string, routingKey: string, content: Buffer | string | unknown, options?: PublishOptions): Promise<void> {
+        await this.channelWrapper.publish(exchange, routingKey, content, options);
+    }
+
+    async configureRetryInfrastructure(wrappers: IHandlerWrapper[]): Promise<void> {
+        const wrappersWithRetryStrategy = wrappers.filter((wrapper: IHandlerWrapper) => wrapper.options.autoAck === AutoAckEnum.AUTO_RETRY);
+
+        const maxRetryCount = Math.max(
+            this.rootRetryOptions.maxRetryCount ?? 0,
+            ...wrappersWithRetryStrategy.map((wrapper: IHandlerWrapper) => wrapper.options.retryOptions?.maxRetryCount ?? 0),
+        );
+
+        if (!maxRetryCount) {
+            this.logger().debug?.('Retry infrastructure configuration skipped because no handlers with auto retry enabled found');
+            return;
+        }
+
+        if (maxRetryCount < 0) {
+            throw new Error(`Invalid max retry count value (${maxRetryCount})`);
+        }
+
+        if (maxRetryCount > 100) {
+            throw new Error(`Too great value for max retry count (${maxRetryCount})`);
+        }
+
+        await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
+            await Promise.all([
+                channel.assertExchange(
+                    DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME,
+                    'x-delayed-message',
+                    this.exchangeOptions({ arguments: { 'x-delayed-type': 'direct' } }),
+                ),
+                ...wrappersWithRetryStrategy.map(async (handlerWrapper: IHandlerWrapper) => {
+                    const { handler, options } = handlerWrapper;
+                    const queue = options.queue ?? generateQueueName(handler);
+
+                    return channel.bindQueue(queue, DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, queue);
+                }),
+            ]);
+
+            this.logger().log(`Delayed message auto retry exchange "${DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME}" asserted`);
+        });
+    }
+
     /**
      * Queue that should be listened for events.
      */
@@ -144,9 +193,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
     private bindEvents(channel: ConfirmChannel, queueName: string, eventWrappers: IEventWrapper[]): Promise<Replies.Empty>[] {
         return eventWrappers.map(async (event: IEventWrapper) => {
-            const { exchange }: IEventWrapper = event;
-
-            return channel.bindQueue(queueName, exchange, this.extractBindingPattern(event));
+            return channel.bindQueue(queueName, event.options.exchange, this.extractBindingPattern(event));
         });
     }
 }

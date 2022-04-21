@@ -1,5 +1,7 @@
+import type { Type } from '@nestjs/common';
 import snakeCase from 'lodash/snakeCase';
 import startCase from 'lodash/startCase';
+import type { IRetryOptions, AbstractPubsubAnyEventHandler } from '../interface';
 
 /**
  * Transform an event string (event class name) to a RabbitMQ event.
@@ -33,4 +35,15 @@ export function toSnakeCase(className: string | Record<string, unknown>): string
     }
 
     return snakeCase(className.toString().replace(/Handler$/, ''));
+}
+
+export function calculateDelay(delay: IRetryOptions['delay'], retryCount: number): number {
+    return !delay ? 0 : typeof delay === 'function' ? delay(retryCount) : delay;
+}
+
+export function generateQueueName(handler: Type<AbstractPubsubAnyEventHandler>): string {
+    const pckName: string = (process.env.npm_package_name as string).split('/').pop() as string;
+    const platform = pckName.replace(/[_-]/gi, '.');
+
+    return [platform, toSnakeCase(handler.name)].join(':');
 }

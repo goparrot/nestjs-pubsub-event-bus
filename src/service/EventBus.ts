@@ -7,10 +7,11 @@ import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
-import type { AbstractPubsubAnyEventHandler, AbstractPubsubEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
 import { LoggerProvider } from '../provider';
 import { toEventName } from '../utils';
 import { FAN_OUT_BINDING } from '../utils/configuration';
+import { ORIGIN_EXCHANGE_HEADER } from '../utils/retry-constants';
 import { CommandBus } from './CommandBus';
 import { Consumer } from './Consumer';
 import { Producer } from './Producer';
@@ -61,6 +62,8 @@ export class EventBus extends NestEventBus<IEvent> {
 
             await this.bindPubSubConsumer(mappedHandler);
         }
+
+        await this.consumer.configureRetryInfrastructure(handlersWithEvents);
     }
 
     protected logger(): LoggerService {
@@ -86,10 +89,11 @@ export class EventBus extends NestEventBus<IEvent> {
             this.consumer.ack(message);
             return;
         }
+        const messageExchange = message.properties.headers[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange;
 
         // try exact match at first
         let matchedEventWrappers: IEventWrapper[] = eventWrappers.filter(
-            ({ event, exchange }: IEventWrapper) => exchange === message.fields.exchange && toEventName(event.name) === typeProperty,
+            ({ event, options }: IEventWrapper) => options.exchange === messageExchange && toEventName(event.name) === typeProperty,
         );
 
         // fallback to binding pattern at second
@@ -98,7 +102,7 @@ export class EventBus extends NestEventBus<IEvent> {
                 const bindingPattern: string = this.consumer.extractBindingPattern(eventWrapper);
 
                 return (
-                    eventWrapper.exchange === message.fields.exchange &&
+                    eventWrapper.options.exchange === messageExchange &&
                     (bindingPattern === FAN_OUT_BINDING || EventBus.checkTypeAgainstBinding(typeProperty, bindingPattern))
                 );
             });
@@ -123,19 +127,19 @@ export class EventBus extends NestEventBus<IEvent> {
 
         const eventClasses = matchedEventWrappers.map((eventWrapper: IEventWrapper) => eventWrapper.event);
 
-        const [firstEventClass, ...unused]: Type<AbstractPubsubEvent<any>>[] = eventClasses;
+        const [firstEventClass, ...unused]: Type<AbstractSubscriptionEvent<any>>[] = eventClasses;
         if (unused.length) {
             this.logger().warn(
                 JSON.stringify({
                     ...baseContext,
                     used: firstEventClass.name,
-                    unused: unused.map((event: Type<AbstractPubsubEvent<any>>) => event.name),
+                    unused: unused.map((event: Type<AbstractSubscriptionEvent<any>>) => event.name),
                     message: "Handler's event intersection detected",
                 }),
             );
         }
 
-        const pubSubEvent: AbstractPubsubEvent<any> = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
+        const pubSubEvent: AbstractSubscriptionEvent<any> = new firstEventClass(JSON.parse(message.content.toString())).withMessage(message);
 
         this._pubSubPublisher.publishLocally(pubSubEvent);
     }
@@ -152,14 +156,14 @@ export class EventBus extends NestEventBus<IEvent> {
 
             const eventWrappers: IEventWrapper[] = [];
 
-            metadata.events.forEach((event: Type<AbstractPubsubEvent<any>>) => {
+            metadata.events.forEach((event: Type<AbstractSubscriptionEvent<any>>) => {
                 const metadata: IPubsubEventOptions | undefined = this.reflector.reflectEventMetadata(event);
                 if (!metadata) {
                     this.logger().error(`Event "${event.name}" should be decorated with "${PubsubEvent.name}"`);
                     return;
                 }
 
-                eventWrappers.push({ ...metadata, event });
+                eventWrappers.push({ event, options: metadata });
             });
 
             validHandlersWithEvents.push({ handler: handler, eventWrappers, options: omit(metadata, 'events') });
