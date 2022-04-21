@@ -11,4 +11,8 @@ export enum AutoAckEnum {
      * Acknowledge should be performed manually
      */
     NEVER = 'NEVER',
+    /**
+     * Return message to the end of the origin queue
+     */
+    AUTO_RETRY = 'AUTO_RETRY',
 }

@@ -50,11 +50,10 @@ export class Producer extends PubsubManager implements OnModuleInit {
 
         const routingKey: string = customRoutingKey ?? toEventName(event.constructor.name);
         const headers: PublishOptions = { ...this.headers(event.getOptions()), type: routingKey };
-        const { payload }: AbstractPubsubEvent<any> = event;
 
-        const message: string = `Event "${routingKey}" to "${exchange}" with ${JSON.stringify({ payload, headers })}`;
+        const message: string = `Event "${routingKey}" to "${exchange}" with ${JSON.stringify({ event, headers })}`;
         try {
-            await this.channelWrapper.publish(exchange, routingKey, payload, headers);
+            await this.channelWrapper.publish(exchange, routingKey, event.payload, headers);
             this.logger().log(`${message} -> PUBLISHED.`);
         } catch (e) {
             if (e instanceof Error) {

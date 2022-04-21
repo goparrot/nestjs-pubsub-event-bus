@@ -2,7 +2,15 @@ import type { DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { Logger, Module } from '@nestjs/common';
 import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { AmqpConnectionManagerOptions, ConnectionUrl } from 'amqp-connection-manager';
-import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, ICqrsModuleAsyncOptions, ICqrsModuleOptions, PublishOptions } from './interface';
+import type {
+    BindingQueueOptions,
+    ExchangeOptions,
+    IConsumerOptions,
+    ICqrsModuleAsyncOptions,
+    ICqrsModuleOptions,
+    PublishOptions,
+    IRetryOptions,
+} from './interface';
 import { createPrepareHandlerStrategiesProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
 import {
@@ -14,6 +22,7 @@ import {
     CQRS_MODULE_CONSUMER_OPTIONS,
     CQRS_MODULE_OPTIONS,
     CQRS_PRODUCER_CONFIG,
+    CQRS_RETRY_OPTIONS,
     DEFAULT_CONNECTION_MANAGER_OPTIONS,
     DEFAULT_CONSUMER_OPTIONS,
     DEFAULT_EXCHANGE_CONFIGURATION,
@@ -84,6 +93,13 @@ import {
             provide: CQRS_CONNECTION_MANAGER_OPTIONS,
             useFactory(options: ICqrsModuleOptions): AmqpConnectionManagerOptions {
                 return { ...DEFAULT_CONNECTION_MANAGER_OPTIONS, ...options.config?.connectionManagerOptions };
+            },
+            inject: [CQRS_MODULE_OPTIONS],
+        },
+        {
+            provide: CQRS_RETRY_OPTIONS,
+            useFactory(options: ICqrsModuleOptions): IRetryOptions {
+                return { ...options.retryOptions };
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
