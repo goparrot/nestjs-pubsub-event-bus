@@ -9,7 +9,7 @@ import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
 import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
 import { LoggerProvider } from '../provider';
-import { toEventName } from '../utils';
+import { generateQueueName, toEventName } from '../utils';
 import { FAN_OUT_BINDING } from '../utils/configuration';
 import { ORIGIN_EXCHANGE_HEADER } from '../utils/retry-constants';
 import { CommandBus } from './CommandBus';
@@ -166,7 +166,17 @@ export class EventBus extends NestEventBus<IEvent> {
                 eventWrappers.push({ event, options: metadata });
             });
 
-            validHandlersWithEvents.push({ handler: handler, eventWrappers, options: omit(metadata, 'events') });
+            if (!eventWrappers.length) {
+                this.logger().error(`Handler "${handler.name}" has no valid events"`);
+                return;
+            }
+
+            validHandlersWithEvents.push({
+                handler,
+                eventWrappers,
+                options: omit(metadata, 'events'),
+                queue: metadata.queue ?? generateQueueName(handler),
+            });
         });
 
         return validHandlersWithEvents;

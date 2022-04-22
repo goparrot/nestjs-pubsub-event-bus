@@ -6,7 +6,7 @@ import { chain } from 'lodash';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
 import { AutoAckEnum, BindingQueueOptions, IConsumerOptions, IRetryOptions } from '../interface';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, PrepareHandlerStrategies } from '../provider';
-import { generateQueueName, toEventName, toSnakeCase } from '../utils';
+import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_RETRY_OPTIONS } from '../utils/configuration';
 import { DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME } from '../utils/retry-constants';
 import { PubsubManager } from './PubsubManager';
@@ -47,7 +47,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         if (this.appInTestingMode()) {
             return;
         }
-        const { handler, eventWrappers, options } = handlerWrapper;
+        const { eventWrappers, options, queue } = handlerWrapper;
 
         this.initConnectionIfRequired();
         this.initChannelIfRequired();
@@ -61,15 +61,14 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
         exchangesToAssert.forEach((exchange: string) => this.exchanges.add(exchange));
 
-        const queueName: string = options.queue ?? generateQueueName(handler);
         const bindingPatterns: string[] = eventWrappers.map((event: IEventWrapper) => this.extractBindingPattern(event));
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
                 ...exchangesToAssert.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
-                channel.assertQueue(queueName, this.bindingOptions(options.bindingQueueOptions)),
-                ...this.bindEvents(channel, queueName, eventWrappers),
-                channel.consume(queueName, (msg: ConsumeMessage | null) => {
+                channel.assertQueue(queue, this.bindingOptions(options.bindingQueueOptions)),
+                ...this.bindEvents(channel, queue, eventWrappers),
+                channel.consume(queue, (msg: ConsumeMessage | null) => {
                     try {
                         onMessage(msg);
                     } catch (e) {
@@ -78,7 +77,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
                 }),
             ]);
 
-            this.logger().log(`Listening for "${bindingPatterns.join(', ')}" events from [${handlerExchanges.join(', ')} <- ${queueName}]`);
+            this.logger().log(`Listening for "${bindingPatterns.join(', ')}" events from [${handlerExchanges.join(', ')} <- ${queue}]`);
         });
     }
 
@@ -159,9 +158,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
                     this.exchangeOptions({ arguments: { 'x-delayed-type': 'direct' } }),
                 ),
                 ...wrappersWithRetryStrategy.map(async (handlerWrapper: IHandlerWrapper) => {
-                    const { handler, options } = handlerWrapper;
-                    const queue = options.queue ?? generateQueueName(handler);
-
+                    const { queue } = handlerWrapper;
                     return channel.bindQueue(queue, DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, queue);
                 }),
             ]);
