@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { AutoAckEnum, IRetryOptions } from '../../interface';
-import { calculateDelay, generateQueueName } from '../../utils';
+import { calculateDelay } from '../../utils';
 import { CQRS_RETRY_OPTIONS } from '../../utils/configuration';
 import { DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, ORIGIN_EXCHANGE_HEADER, RETRY_COUNT_HEADER } from '../../utils/retry-constants';
 import { AbstractHandleWrapperStrategy } from './AbstractHandleWrapperStrategy';
@@ -22,7 +22,8 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
     ): Promise<void> {
         const {
             handler,
-            options: { retryOptions, queue = generateQueueName(handler) },
+            queue,
+            options: { retryOptions },
         } = handlerWrapper;
 
         const message = event.message();

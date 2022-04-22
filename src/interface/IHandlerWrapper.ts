@@ -7,5 +7,6 @@ import type { IEventWrapper } from './IEventWrapper';
 export interface IHandlerWrapper<T extends AbstractSubscriptionEvent<any> = AbstractSubscriptionEvent<any>> {
     handler: Type<AbstractPubsubHandler<T>>;
     eventWrappers: IEventWrapper<T>[];
-    options: IPubsubEventHandlerOptions;
+    options: Omit<IPubsubEventHandlerOptions, 'queue'>;
+    queue: string;
 }
