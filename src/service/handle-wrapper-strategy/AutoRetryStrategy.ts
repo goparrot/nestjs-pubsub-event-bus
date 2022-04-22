@@ -32,18 +32,19 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
         }
 
         const { maxRetryCount = this.rootRetryOptions.maxRetryCount ?? 0, delay = this.rootRetryOptions.delay } = retryOptions ?? {};
-        const currentRetryCount = event.retryCount;
+        let retryCount = event.retryCount;
 
-        if (currentRetryCount > maxRetryCount) {
+        if (retryCount > maxRetryCount) {
             this.logger.warn(`Maximum number of retry attempts (${maxRetryCount}) exceeded. Discarded message: ${JSON.stringify(event)}`, handler.name);
             return;
         }
-        const newRetryCount = currentRetryCount + 1;
-        const delayValue = calculateDelay(delay, newRetryCount);
+        retryCount++;
+
+        const delayValue = calculateDelay(delay, retryCount);
         const headers = {
             ...message.properties.headers,
             'x-delay': delayValue,
-            [RETRY_COUNT_HEADER]: newRetryCount,
+            [RETRY_COUNT_HEADER]: retryCount,
             [ORIGIN_EXCHANGE_HEADER]: message.properties.headers[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange,
         };
 
@@ -70,9 +71,8 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
                 } finally {
                     const message = event.message();
                     if (message) {
-                        channelWrapper.ack(message);
-
                         await requeueMessageIfRequired(event, handlerWrapper, channelWrapper);
+                        channelWrapper.ack(message);
                     }
                 }
             },
