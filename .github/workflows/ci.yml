@@ -34,6 +34,17 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    services:
+      rabbitmq:
+        image: heidiks/rabbitmq-delayed-message-exchange
+        ports:
+          - 5672:5672
+        options:
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Clone repository
         uses: actions/checkout@v2

@@ -1,5 +1,5 @@
 module.exports = {
-    extends: ['@goparrot/eslint-config/recommended', '@goparrot/eslint-config/less-strict'],
+    extends: ['@goparrot/eslint-config/recommended', '@goparrot/eslint-config/less-strict', 'plugin:jest/recommended', 'plugin:jest/style'],
     parserOptions: {
         project: './tsconfig.eslint.json',
     },
