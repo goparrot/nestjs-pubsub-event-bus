@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  rabbitmq:
+    image: heidiks/rabbitmq-delayed-message-exchange
+    ports:
+      - "4369:4369"
+      - "5672:5672"
+      - "15672:15672"
+      - "25672:25672"
