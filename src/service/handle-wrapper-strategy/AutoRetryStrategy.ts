@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
-import type { AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { AutoAckEnum, IRetryOptions } from '../../interface';
 import { calculateDelay } from '../../utils';
 import { CQRS_RETRY_OPTIONS } from '../../utils/configuration';
@@ -19,6 +19,7 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
         event: AbstractSubscriptionEvent<any>,
         handlerWrapper: IHandlerWrapper,
         channelWrapper: IChannelWrapper,
+        onRetryAttemptsExceeded?: (event: AbstractSubscriptionEvent<any>) => Promise<void>,
     ): Promise<void> {
         const {
             handler,
@@ -31,11 +32,12 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
             return;
         }
 
-        const { maxRetryCount = this.rootRetryOptions.maxRetryCount ?? 0, delay = this.rootRetryOptions.delay } = retryOptions ?? {};
+        const { maxRetryAttempts = this.rootRetryOptions.maxRetryAttempts ?? 0, delay = this.rootRetryOptions.delay } = retryOptions ?? {};
         let retryCount = event.retryCount;
 
-        if (retryCount > maxRetryCount) {
-            this.logger.warn(`Maximum number of retry attempts (${maxRetryCount}) exceeded. Discarded message: ${JSON.stringify(event)}`, handler.name);
+        if (retryCount > maxRetryAttempts) {
+            await onRetryAttemptsExceeded?.(event);
+            this.logger.warn(`Maximum number of retry attempts (${maxRetryAttempts}) exceeded. Discarded message: ${JSON.stringify(event)}`, handler.name);
             return;
         }
         retryCount++;
@@ -68,10 +70,13 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
             async value(event: AbstractSubscriptionEvent<any>): Promise<void> {
                 try {
                     await originalMethod.apply(this, [event]);
+                } catch (error) {
+                    await requeueMessageIfRequired(event, handlerWrapper, channelWrapper, async (event: AbstractSubscriptionEvent<any>) => {
+                        return (this as AbstractPubsubAnyEventHandler).onRetryAttemptsExceeded?.(event, error);
+                    });
                 } finally {
                     const message = event.message();
                     if (message) {
-                        await requeueMessageIfRequired(event, handlerWrapper, channelWrapper);
                         channelWrapper.ack(message);
                     }
                 }
