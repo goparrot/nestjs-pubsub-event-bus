@@ -4,6 +4,8 @@ import type { AbstractSubscriptionEvent } from './AbstractSubscriptionEvent';
 export abstract class AbstractPubsubHandler<T extends AbstractSubscriptionEvent<any>> implements IEventHandler<T> {
     abstract handle(event: T): void | Promise<void>;
 
+    async onRetryAttemptsExceeded?(event: T, error: Error): Promise<void>;
+
     /**
      * Positively acknowledge event.
      * This method should be used only when automatic acknowledge is disabled.

@@ -132,22 +132,22 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     async configureRetryInfrastructure(wrappers: IHandlerWrapper[]): Promise<void> {
         const wrappersWithRetryStrategy = wrappers.filter((wrapper: IHandlerWrapper) => wrapper.options.autoAck === AutoAckEnum.AUTO_RETRY);
 
-        const maxRetryCount = Math.max(
-            this.rootRetryOptions.maxRetryCount ?? 0,
-            ...wrappersWithRetryStrategy.map((wrapper: IHandlerWrapper) => wrapper.options.retryOptions?.maxRetryCount ?? 0),
+        const maxRetryAttempts = Math.max(
+            this.rootRetryOptions.maxRetryAttempts ?? 0,
+            ...wrappersWithRetryStrategy.map((wrapper: IHandlerWrapper) => wrapper.options.retryOptions?.maxRetryAttempts ?? 0),
         );
 
-        if (!maxRetryCount) {
+        if (!maxRetryAttempts) {
             this.logger().debug?.('Retry infrastructure configuration skipped because no handlers with auto retry enabled found');
             return;
         }
 
-        if (maxRetryCount < 0) {
-            throw new Error(`Invalid max retry count value (${maxRetryCount})`);
+        if (maxRetryAttempts < 0) {
+            throw new Error(`Invalid max retry count value (${maxRetryAttempts})`);
         }
 
-        if (maxRetryCount > 100) {
-            throw new Error(`Too great value for max retry count (${maxRetryCount})`);
+        if (maxRetryAttempts > 100) {
+            throw new Error(`Too great value for max retry count (${maxRetryAttempts})`);
         }
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
