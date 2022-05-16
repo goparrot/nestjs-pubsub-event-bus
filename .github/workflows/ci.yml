@@ -40,7 +40,7 @@ jobs:
         ports:
           - 5672:5672
         options:
-          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-cmd "rabbitmq-diagnostics -q check_virtual_hosts"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
