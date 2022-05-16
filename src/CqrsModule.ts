@@ -8,11 +8,11 @@ import type {
     IConsumerOptions,
     ICqrsModuleAsyncOptions,
     ICqrsModuleOptions,
-    PublishOptions,
     IRetryOptions,
+    PublishOptions,
 } from './interface';
 import { createPrepareHandlerStrategiesProviders, LoggerProvider } from './provider';
-import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubReflector, QueryBus } from './service';
+import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubEventBinder, PubSubReflector, QueryBus } from './service';
 import {
     CQRS_BINDING_QUEUE_CONFIG,
     CQRS_CONNECTION_MANAGER_OPTIONS,
@@ -40,6 +40,7 @@ import {
         CommandBus,
         ExplorerService,
         PubSubReflector,
+        PubSubEventBinder,
         {
             provide: CQRS_CONNECTION_URLS,
             useFactory(options: ICqrsModuleOptions): ConnectionUrl | ConnectionUrl[] {
@@ -109,10 +110,11 @@ import {
 })
 export class CqrsModule implements OnApplicationBootstrap {
     constructor(
-        private readonly explorerService: ExplorerService,
+        private readonly queryBus: QueryBus,
         private readonly eventsBus: EventBus,
         private readonly commandsBus: CommandBus,
-        private readonly queryBus: QueryBus,
+        private readonly explorerService: ExplorerService,
+        private readonly pubSubEventBinder: PubSubEventBinder,
     ) {}
 
     static forRoot(options: ICqrsModuleOptions): DynamicModule {
@@ -150,6 +152,6 @@ export class CqrsModule implements OnApplicationBootstrap {
         this.eventsBus.registerSagas(sagas);
         this.eventsBus.register(events);
 
-        await this.eventsBus.registerPubSubEvents(this.explorerService.pubsubEvents());
+        await this.pubSubEventBinder.registerPubSubEvents(this.explorerService.pubsubEvents());
     }
 }

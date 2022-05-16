@@ -98,5 +98,7 @@ export abstract class PubsubManager implements OnModuleDestroy {
         return { ...this.assertExchangeOptions, ...extra };
     }
 
-    protected appInTestingMode = (): boolean => process.env.NODE_ENV === 'test';
+    protected appInTestingMode(): boolean {
+        return process.env.NODE_ENV === 'test';
+    }
 }
