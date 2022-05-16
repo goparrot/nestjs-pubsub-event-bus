@@ -1,42 +1,19 @@
 import faker from '@faker-js/faker';
+import type { IEvent } from '@nestjs/cqrs';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
+import { first, firstValueFrom } from 'rxjs';
 import { AbstractPubsubEvent, AbstractPubsubHandler, CqrsModule, EventBus, PubsubEvent, PubsubEventHandler } from '../../../src';
-
-class CountDownLatch {
-    private resolvePromise: () => void;
-    private promise = new Promise<void>((resolve: () => void) => {
-        this.resolvePromise = resolve;
-    });
-
-    constructor(private _count: number) {
-        if (_count < 1) {
-            throw new Error();
-        }
-    }
-
-    countDown(): void {
-        if (!this._count) {
-            throw new Error();
-        }
-        this._count--;
-
-        if (!this._count) {
-            this.resolvePromise();
-        }
-    }
-
-    get count(): number {
-        return this._count;
-    }
-
-    async wait(): Promise<void> {
-        return this.promise;
-    }
-}
+import { HandlerBound } from '../../../src/lifecycle-event';
+import { CountDownLatch } from '../../util';
 
 describe('Basic Scenarios', () => {
     const fakeExchange = 'test';
+
+    let testingModule: TestingModule;
+    let eventBus: EventBus;
+    let testHandler: TestHandler;
+    let latch: CountDownLatch;
 
     @PubsubEvent({ exchange: fakeExchange })
     class TestEvent extends AbstractPubsubEvent<Record<string, unknown>> {}
@@ -44,15 +21,9 @@ describe('Basic Scenarios', () => {
     @PubsubEventHandler(TestEvent)
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
         async handle(_event: TestEvent): Promise<void> {
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             latch.countDown();
         }
     }
-
-    let testingModule: TestingModule;
-    let eventBus: EventBus;
-    let testHandler: TestHandler;
-    let latch: CountDownLatch;
 
     beforeAll(async () => {
         process.env.NODE_ENV = 'development';
@@ -66,6 +37,8 @@ describe('Basic Scenarios', () => {
 
         eventBus = testingModule.get(EventBus);
         testHandler = testingModule.get(TestHandler);
+
+        await firstValueFrom(eventBus.subject$.pipe(first((event: IEvent) => event instanceof HandlerBound && event.handlerName === TestHandler.name)));
     });
 
     beforeEach(() => {
