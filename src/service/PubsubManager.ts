@@ -76,7 +76,6 @@ export abstract class PubsubManager implements OnModuleDestroy {
         }
 
         this.channelWrapper$ = this.connection
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             .createChannel({ json: true, setup: this.setupChannel.bind(this) })
             .on('connect', () => this.logger().log(`Amqp channel created`, this.constructor.name))
             .on('error', (err: Error, { name }: { name?: string }) =>

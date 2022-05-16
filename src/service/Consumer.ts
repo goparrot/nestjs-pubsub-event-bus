@@ -5,10 +5,12 @@ import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
 import { AutoAckEnum, BindingQueueOptions, IConsumerOptions, IRetryOptions } from '../interface';
+import { HandlerBound } from '../lifecycle-event';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, PrepareHandlerStrategies } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_RETRY_OPTIONS } from '../utils/configuration';
 import { DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME } from '../utils/retry-constants';
+import { EventBus } from './EventBus';
 import { PubsubManager } from './PubsubManager';
 
 @Injectable()
@@ -19,6 +21,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     private readonly exchanges: Set<string> = new Set<string>();
 
     constructor(
+        private readonly eventBus: EventBus,
         @Inject(CQRS_RETRY_OPTIONS) private readonly rootRetryOptions: IRetryOptions,
         @Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions,
         @Inject(CQRS_BINDING_QUEUE_CONFIG) private readonly bindingQueueOptions: BindingQueueOptions,
@@ -47,7 +50,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         if (this.appInTestingMode()) {
             return;
         }
-        const { eventWrappers, options, queue } = handlerWrapper;
+        const { handler, eventWrappers, options, queue } = handlerWrapper;
 
         this.initConnectionIfRequired();
         this.initChannelIfRequired();
@@ -78,6 +81,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
             ]);
 
             this.logger().log(`Listening for "${bindingPatterns.join(', ')}" events from [${handlerExchanges.join(', ')} <- ${queue}]`);
+            await this.eventBus.publish(new HandlerBound(handler.name));
         });
     }
 
