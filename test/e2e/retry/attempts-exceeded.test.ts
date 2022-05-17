@@ -1,10 +1,13 @@
 import faker from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { AbstractPubsubEvent, AbstractPubsubHandler, EventBus, PubsubEvent, PubsubEventHandler } from '../../../src';
+import _ from 'lodash';
+import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler } from '../../../src';
 import { CountDownLatch, TestingCqrsModule, waitHandlerBound } from '../../util';
 
-describe('Basic Scenarios', () => {
+describe('Retry Scenarios (attempts exceeded)', () => {
+    const maxRetryAttempts = 3;
+    const delayFactory = (attempt: number): number => attempt * 100;
     let testingModule: TestingModule;
     let eventBus: EventBus;
     let testHandler: TestHandler;
@@ -13,9 +16,21 @@ describe('Basic Scenarios', () => {
     @PubsubEvent({ exchange: faker.datatype.uuid() })
     class TestEvent extends AbstractPubsubEvent<Record<string, unknown>> {}
 
-    @PubsubEventHandler(TestEvent, { queue: faker.datatype.uuid(), bindingQueueOptions: { autoDelete: true } })
+    @PubsubEventHandler(TestEvent, {
+        autoAck: AutoAckEnum.AUTO_RETRY,
+        retryOptions: {
+            maxRetryAttempts,
+            delay: delayFactory,
+        },
+        queue: faker.datatype.uuid(),
+        bindingQueueOptions: { autoDelete: true },
+    })
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
-        async handle(_event: TestEvent): Promise<void> {
+        async handle(event: TestEvent): Promise<void> {
+            throw new Error(`Failed on ${event.retryCount} attempt`);
+        }
+
+        async onRetryAttemptsExceeded(_event: TestEvent, _error: Error): Promise<void> {
             latch.countDown();
         }
     }
@@ -55,11 +70,24 @@ describe('Basic Scenarios', () => {
             foo: faker.lorem.word(),
         };
         const testEvent = new TestEvent(payload);
+        const expectedTime = _.times(maxRetryAttempts + 1, delayFactory).reduce((acc: number, val: number) => acc + val, 0);
 
+        const start = Date.now();
         await eventBus.publish(testEvent);
 
         await latch.wait();
+        expect(Date.now() - start).toBeGreaterThanOrEqual(expectedTime);
 
-        expect(spy).toHaveBeenCalledWith(expect.objectContaining({ payload, options: {}, fireLocally: false, retryCount: 0 }));
+        _.times(maxRetryAttempts + 1, (retryAttempt: number) => {
+            expect(spy).toHaveBeenNthCalledWith(
+                retryAttempt + 1,
+                expect.objectContaining({
+                    payload,
+                    options: {},
+                    fireLocally: false,
+                    retryCount: retryAttempt,
+                }),
+            );
+        });
     });
 });
