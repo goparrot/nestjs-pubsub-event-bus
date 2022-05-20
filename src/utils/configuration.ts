@@ -1,5 +1,5 @@
 import type { AmqpConnectionManagerOptions } from 'amqp-connection-manager';
-import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, PublishOptions } from '../interface';
+import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, IRetryOptions, PublishOptions } from '../interface';
 
 export const CQRS_MODULE_CONSUMER_OPTIONS = 'CQRS_MODULE_CONSUMER_OPTIONS';
 export const CQRS_MODULE_OPTIONS = 'CQRS_MODULE_OPTIONS';
@@ -31,6 +31,11 @@ export const DEFAULT_QUEUE_BINDING_CONFIGURATION: BindingQueueOptions = {
 export const DEFAULT_CONSUMER_OPTIONS: IConsumerOptions = {
     prefetchPerConsumer: 10,
     prefetchPerChannel: 100,
+};
+
+export const DEFAULT_RETRY_OPTIONS: IRetryOptions = {
+    maxRetryAttempts: 3,
+    delay: Math.exp,
 };
 
 export const DEFAULT_CONNECTION_MANAGER_OPTIONS: AmqpConnectionManagerOptions = {};

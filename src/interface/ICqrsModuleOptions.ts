@@ -34,5 +34,8 @@ export interface ICqrsModuleOptions {
      */
     connectionName?: string;
 
+    /**
+     * Handler specific retry options. Specific options are merged with the global ones
+     */
     retryOptions?: IRetryOptions;
 }
