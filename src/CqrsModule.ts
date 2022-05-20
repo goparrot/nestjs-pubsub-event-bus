@@ -28,6 +28,7 @@ import {
     DEFAULT_EXCHANGE_CONFIGURATION,
     DEFAULT_PRODUCER_CONFIGURATION,
     DEFAULT_QUEUE_BINDING_CONFIGURATION,
+    DEFAULT_RETRY_OPTIONS,
 } from './utils/configuration';
 
 @Module({
@@ -100,7 +101,7 @@ import {
         {
             provide: CQRS_RETRY_OPTIONS,
             useFactory(options: ICqrsModuleOptions): IRetryOptions {
-                return { ...options.retryOptions };
+                return { ...DEFAULT_RETRY_OPTIONS, ...options.retryOptions };
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
