@@ -7,8 +7,8 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Bug Fixes
 
-* **log:** log correct exchanges bound to queue ([975045d](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/975045d881577687aa5616feaadff6d568e50a1b))
-* remove event handler binding by event name ([33c5664](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/33c56645ce77bff9b5d0821de3ebc3bcc0f25372))
+* **log:** log correct exchanges bound to queue ([5e59ba62](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/5e59ba6229bdb6bfb9fb2d0380eff6652a116e39))
+* remove event handler binding by event name ([80128a09](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/80128a09e45c53130b81a412e3f04bffe056a877))
 
 ### [2.3.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.1...v2.3.2) (2022-03-17)
 
