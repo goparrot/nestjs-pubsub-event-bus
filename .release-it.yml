@@ -1,5 +1,13 @@
+hooks:
+  before:npm:release:
+    - npm run build:dist
+    - ts-node -T bin/prepublish.ts
+
 git:
   commitMessage: "chore(release): ${version}"
+
+npm:
+  publishPath: ./dist
 
 github:
   release: true

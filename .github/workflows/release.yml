@@ -6,6 +6,14 @@ on:
     branches: [master]
     types: [completed]
 
+  workflow_dispatch:
+    inputs:
+      customReleaseVersion:
+        description: Custom release version
+        required: false
+        default: ""
+        type: string
+
 jobs:
   release:
     # double check
@@ -36,7 +44,8 @@ jobs:
       - name: Create and push git tag, publish version to npm and create github release
         run: |
           npm install --progress=false --loglevel=warn --ignore-scripts
-          npm run release
+          npm run release -- $CUSTOM_RELEASE_VERSION
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
+          CUSTOM_RELEASE_VERSION: ${{ github.event.inputs.customReleaseVersion }}
