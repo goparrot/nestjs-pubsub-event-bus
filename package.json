@@ -62,9 +62,8 @@
         "build:dist:esm": "tsc --project tsconfig.build-esm.json",
         "build:dist:types": "tsc -b tsconfig.build-types.json",
         "version:prerelease": "ts-node -T bin/npm-dev-version.ts",
-        "publish": "npm run build:dist && ts-node -T bin/prepublish.ts && npm publish ./dist",
-        "publish:dev": "npm run version:prerelease && npm run publish --tag dev",
-        "publish:dev:dry": "npm run publish --tag dev --dry-run",
+        "publish:dev": "npm run version:prerelease && npm run build:dist && ts-node -T bin/prepublish.ts && npm publish ./dist --tag dev",
+        "publish:dev:dry": "npm run build:dist && ts-node -T bin/prepublish.ts && npm publish ./dist --tag dev --dry-run",
         "release": "release-it",
         "release:dry": "npm run publish:dev:dry && release-it --dry-run",
         "github-release": "conventional-github-releaser -p angular"
