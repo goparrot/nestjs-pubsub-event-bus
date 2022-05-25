@@ -4,7 +4,7 @@ hooks:
     - ts-node -T bin/prepublish.ts
 
 git:
-  commitMessage: "chore(release): ${version}"
+  commitMessage: "chore(release): ${version} [no ci]"
 
 npm:
   publishPath: ./dist
