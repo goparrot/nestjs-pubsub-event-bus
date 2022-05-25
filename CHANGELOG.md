@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.3...v3.0.1) (2022-05-25)
+
+
+### Code Refactoring
+
+* move queue name and binding options from event handler class fields to decorator ([d59b65c](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/d59b65c352ace7acc0bc1b2d239b23101679d14c))
+
+
+### Features
+
+* add error when application is started without npm scripts ([a09db22](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/a09db220ea3d951e2a28b28f552d543a5f907e28))
+* add handler bound lifecycle event ([9836106](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/983610650462fa1df73509a571cf44b27ce843d2))
+* add on retry attempts exceeded event ([de98a94](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/de98a94444d3c63c376e9ccd6a5e94b908dd33b1))
+* expose connection manager options ([03f192e](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/03f192ea903d344b90f9a2b7b718678fc10ba374))
+* implement retry mechanism via delayed message exchange ([b762a8a](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/b762a8a30f79be40cbd0c27f36bd7ccb8a45e13f))
+
+
+### BREAKING CHANGES
+
+* Queue name and binding options were removed from the event handler and moved to the
+pub-sub handler decorator
+
 ### [2.3.3](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.2...v2.3.3) (2022-03-23)
 
 
