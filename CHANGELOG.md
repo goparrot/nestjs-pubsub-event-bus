@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v3.0.1...v3.0.2) (2022-05-26)
+
+
+### Bug Fixes
+
+* correct default retry delay to exp seconds ([51c9361](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/51c9361e8c95328596b729c47495960084b9ae0b))
+
 ## [3.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v2.3.3...v3.0.1) (2022-05-25)
 
 
