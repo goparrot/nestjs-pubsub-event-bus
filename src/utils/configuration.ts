@@ -35,7 +35,7 @@ export const DEFAULT_CONSUMER_OPTIONS: IConsumerOptions = {
 
 export const DEFAULT_RETRY_OPTIONS: IRetryOptions = {
     maxRetryAttempts: 3,
-    delay: Math.exp,
+    delay: (retryCount: number) => 1000 * Math.exp(retryCount),
 };
 
 export const DEFAULT_CONNECTION_MANAGER_OPTIONS: AmqpConnectionManagerOptions = {};

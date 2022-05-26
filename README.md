@@ -199,10 +199,10 @@ ones.
 
 Available options:
 
-| Options          | Description                                                                                                                                            | Module-level default value | Handler-level default value |
-|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|-----------------------------|
-| maxRetryAttempts | Maximum number of retry attempts                                                                                                                       | 3                          |                             |
-| delay            | Delay between retry attempts in milliseconds. Can be a fixed positive number or a function that receives current retry attempt count and returns delay | `Math.exp`                 |                             |
+| Options          | Description                                                                                                                                            | Module-level default value    | Handler-level default value |
+|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|-----------------------------|
+| maxRetryAttempts | Maximum number of retry attempts                                                                                                                       | 3                             |                             |
+| delay            | Delay between retry attempts in milliseconds. Can be a fixed positive number or a function that receives current retry attempt count and returns delay | `1000 * Math.exp(retryCount)` |                             |
 
 When number of retry attempts is exceeded handler method `onRetryAttemptsExceeded` is called with the event and last
 error as arguments. Then message is discarded.
