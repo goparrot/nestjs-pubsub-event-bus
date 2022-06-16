@@ -24,7 +24,7 @@ export abstract class PubsubManager implements OnModuleDestroy {
     private readonly urls: ConnectionUrl | ConnectionUrl[];
 
     @Inject(CQRS_EXCHANGE_CONFIG)
-    private readonly assertExchangeOptions: ExchangeOptions;
+    protected readonly assertExchangeOptions: ExchangeOptions;
 
     @Inject(CQRS_CONNECTION_MANAGER_OPTIONS)
     private readonly connectionManagerOptions: AmqpConnectionManagerOptions;
@@ -91,10 +91,6 @@ export abstract class PubsubManager implements OnModuleDestroy {
 
     protected logger(): LoggerService {
         return LoggerProvider.logger;
-    }
-
-    protected exchangeOptions(extra: ExchangeOptions = {}): ExchangeOptions {
-        return { ...this.assertExchangeOptions, ...extra };
     }
 
     protected appInTestingMode(): boolean {

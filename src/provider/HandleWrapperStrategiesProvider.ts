@@ -1,4 +1,4 @@
-import type { Provider } from '@nestjs/common';
+import type { Provider, Type } from '@nestjs/common';
 import type { AutoAckEnum } from '../interface';
 import type { AbstractHandleWrapperStrategy } from '../service';
 import { AckAndNackStrategy, AlwaysAckStrategy, AutoRetryStrategy, ManualStrategy } from '../service';
@@ -8,7 +8,7 @@ export const CQRS_PREPARE_HANDLER_STRATEGIES = 'CQRS_PREPARE_HANDLER_STRATEGIES'
 export type PrepareHandlerStrategies = Record<AutoAckEnum, AbstractHandleWrapperStrategy>;
 
 export function createPrepareHandlerStrategiesProviders(): Provider[] {
-    const strategies = [AckAndNackStrategy, AlwaysAckStrategy, AutoRetryStrategy, ManualStrategy];
+    const strategies: Type<AbstractHandleWrapperStrategy>[] = [AckAndNackStrategy, AlwaysAckStrategy, AutoRetryStrategy, ManualStrategy];
 
     return [
         ...strategies,
