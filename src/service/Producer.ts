@@ -44,7 +44,7 @@ export class Producer extends PubsubManager implements OnModuleInit {
         const { exchange, customRoutingKey }: IPubsubEventOptions = metadata;
 
         if (!this.exchanges.has(exchange)) {
-            await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => channel.assertExchange(exchange, 'topic', this.exchangeOptions()));
+            await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => channel.assertExchange(exchange, 'topic', this.assertExchangeOptions));
             this.exchanges.add(exchange);
         }
 

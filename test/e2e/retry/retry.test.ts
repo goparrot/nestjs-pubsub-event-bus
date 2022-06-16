@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import _ from 'lodash';
-import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler } from '../../../src';
+import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler, RetryStrategyEnum } from '../../../src';
 import { CountDownLatch, TestingCqrsModule, waitHandlerBound } from '../../util';
 
 describe('Retry Scenarios', () => {
@@ -21,6 +21,7 @@ describe('Retry Scenarios', () => {
         retryOptions: {
             maxRetryAttempts,
             delay: delayFactory,
+            strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
         },
         queue: faker.datatype.uuid(),
         bindingQueueOptions: { autoDelete: true },

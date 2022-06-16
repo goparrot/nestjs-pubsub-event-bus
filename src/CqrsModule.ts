@@ -11,7 +11,7 @@ import type {
     IRetryOptions,
     PublishOptions,
 } from './interface';
-import { createPrepareHandlerStrategiesProviders, LoggerProvider } from './provider';
+import { createPrepareHandlerStrategiesProviders, createRetryStrategiesProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubEventBinder, PubSubReflector, QueryBus } from './service';
 import {
     CQRS_BINDING_QUEUE_CONFIG,
@@ -105,6 +105,7 @@ import {
             },
             inject: [CQRS_MODULE_OPTIONS],
         },
+        ...createRetryStrategiesProviders(),
         ...createPrepareHandlerStrategiesProviders(),
     ],
     exports: [EventBus, CommandBus, QueryBus, Producer, Consumer],

@@ -6,6 +6,7 @@ export * from './ExchangeOptions';
 export * from './IChannelWrapper';
 export * from './IHandlerWrapper';
 export * from './IConsumerOptions';
+export * from './RetryStrategyEnum';
 export * from './ICqrsModuleOptions';
 export * from './AbstractPubsubEvent';
 export * from './BindingQueueOptions';

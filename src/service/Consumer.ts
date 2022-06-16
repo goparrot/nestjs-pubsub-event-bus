@@ -4,12 +4,11 @@ import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
-import { AutoAckEnum, BindingQueueOptions, IConsumerOptions, IRetryOptions } from '../interface';
+import { AutoAckEnum, BindingQueueOptions, IConsumerOptions, IRetryOptions, RetryStrategyEnum } from '../interface';
 import { HandlerBound } from '../lifecycle-event';
-import { CQRS_PREPARE_HANDLER_STRATEGIES, PrepareHandlerStrategies } from '../provider';
+import { CQRS_PREPARE_HANDLER_STRATEGIES, CQRS_RETRY_STRATEGIES, PrepareHandlerStrategies, RetryStrategies } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_RETRY_OPTIONS } from '../utils/configuration';
-import { DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME } from '../utils/retry-constants';
 import { EventBus } from './EventBus';
 import { PubsubManager } from './PubsubManager';
 
@@ -23,6 +22,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     constructor(
         private readonly eventBus: EventBus,
         @Inject(CQRS_RETRY_OPTIONS) private readonly rootRetryOptions: IRetryOptions,
+        @Inject(CQRS_RETRY_STRATEGIES) private readonly retryStrategies: RetryStrategies,
         @Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions,
         @Inject(CQRS_BINDING_QUEUE_CONFIG) private readonly bindingQueueOptions: BindingQueueOptions,
         @Inject(CQRS_PREPARE_HANDLER_STRATEGIES) private readonly prepareHandlerStrategies: PrepareHandlerStrategies,
@@ -68,7 +68,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
-                ...exchangesToAssert.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.exchangeOptions())),
+                ...exchangesToAssert.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.assertExchangeOptions)),
                 channel.assertQueue(queue, this.bindingOptions(options.bindingQueueOptions)),
                 ...this.bindEvents(channel, queue, eventWrappers),
                 channel.consume(queue, (msg: ConsumeMessage | null) => {
@@ -154,21 +154,15 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
             throw new Error(`Too great value for max retry count (${maxRetryAttempts})`);
         }
 
-        await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
-            await Promise.all([
-                channel.assertExchange(
-                    DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME,
-                    'x-delayed-message',
-                    this.exchangeOptions({ arguments: { 'x-delayed-type': 'direct' } }),
-                ),
-                ...wrappersWithRetryStrategy.map(async (handlerWrapper: IHandlerWrapper) => {
-                    const { queue } = handlerWrapper;
-                    return channel.bindQueue(queue, DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, queue);
-                }),
-            ]);
-
-            this.logger().log(`Delayed message auto retry exchange "${DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME}" asserted`);
-        });
+        await Promise.all(
+            chain(wrappersWithRetryStrategy)
+                .groupBy((wrapper: IHandlerWrapper) => wrapper.options.retryOptions?.strategy ?? RetryStrategyEnum.DEAD_LETTER_TTL)
+                .entries()
+                .map(async ([strategy, wrappers]: [RetryStrategyEnum, IHandlerWrapper[]]) =>
+                    this.retryStrategies[strategy].setupInfrastructure(this.channelWrapper, wrappers),
+                )
+                .value(),
+        );
     }
 
     /**

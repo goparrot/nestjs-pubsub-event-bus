@@ -5,6 +5,7 @@ export * from './QueryBus';
 export * from './Publisher';
 export * from './CommandBus';
 export * from './PubsubManager';
+export * from './retry-strategy';
 export * from './ExplorerService';
 export * from './PubSubReflector';
 export * from './PubSubEventBinder';
