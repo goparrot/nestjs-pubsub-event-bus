@@ -2,10 +2,10 @@ import { faker } from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import _ from 'lodash';
-import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler, RetryStrategyEnum } from '../../../src';
-import { CountDownLatch, TestingCqrsModule, waitHandlerBound } from '../../util';
+import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler, RetryStrategyEnum } from '../../../../src';
+import { CountDownLatch, TestingCqrsModule, waitHandlerBound } from '../../../util';
 
-describe('Retry Scenarios (attempts exceeded)', () => {
+describe('Retry Scenarios (attempts exceeded) (Dead Letter Exchange and message expiration)', () => {
     const maxRetryAttempts = 3;
     const delayFactory = (attempt: number): number => attempt * 100;
     let testingModule: TestingModule;
@@ -21,10 +21,9 @@ describe('Retry Scenarios (attempts exceeded)', () => {
         retryOptions: {
             maxRetryAttempts,
             delay: delayFactory,
-            strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
+            strategy: RetryStrategyEnum.DEAD_LETTER_TTL,
         },
         queue: faker.datatype.uuid(),
-        bindingQueueOptions: { autoDelete: true },
     })
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
         async handle(event: TestEvent): Promise<void> {

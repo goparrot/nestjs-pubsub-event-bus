@@ -8,8 +8,8 @@ import type {
     IConsumerOptions,
     ICqrsModuleAsyncOptions,
     ICqrsModuleOptions,
-    IRetryOptions,
     PublishOptions,
+    DefaultedRetryOptions,
 } from './interface';
 import { createPrepareHandlerStrategiesProviders, createRetryStrategiesProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubEventBinder, PubSubReflector, QueryBus } from './service';
@@ -100,7 +100,7 @@ import {
         },
         {
             provide: CQRS_RETRY_OPTIONS,
-            useFactory(options: ICqrsModuleOptions): IRetryOptions {
+            useFactory(options: ICqrsModuleOptions): DefaultedRetryOptions {
                 return { ...DEFAULT_RETRY_OPTIONS, ...options.retryOptions };
             },
             inject: [CQRS_MODULE_OPTIONS],

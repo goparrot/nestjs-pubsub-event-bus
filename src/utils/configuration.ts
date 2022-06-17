@@ -1,5 +1,6 @@
 import type { AmqpConnectionManagerOptions } from 'amqp-connection-manager';
-import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, IRetryOptions, PublishOptions } from '../interface';
+import type { BindingQueueOptions, ExchangeOptions, IConsumerOptions, PublishOptions, DefaultedRetryOptions } from '../interface';
+import { RetryStrategyEnum } from '../interface';
 
 export const CQRS_MODULE_CONSUMER_OPTIONS = 'CQRS_MODULE_CONSUMER_OPTIONS';
 export const CQRS_MODULE_OPTIONS = 'CQRS_MODULE_OPTIONS';
@@ -33,8 +34,9 @@ export const DEFAULT_CONSUMER_OPTIONS: IConsumerOptions = {
     prefetchPerChannel: 100,
 };
 
-export const DEFAULT_RETRY_OPTIONS: IRetryOptions = {
+export const DEFAULT_RETRY_OPTIONS: DefaultedRetryOptions = {
     maxRetryAttempts: 3,
+    strategy: RetryStrategyEnum.DEAD_LETTER_TTL,
     delay: (retryCount: number) => Math.floor(1000 * Math.exp(retryCount - 1)),
 };
 

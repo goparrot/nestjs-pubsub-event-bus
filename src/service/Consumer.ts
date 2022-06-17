@@ -4,7 +4,7 @@ import type { IEventHandler } from '@nestjs/cqrs';
 import type { ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain } from 'lodash';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
-import { AutoAckEnum, BindingQueueOptions, IConsumerOptions, IRetryOptions, RetryStrategyEnum } from '../interface';
+import { AutoAckEnum, BindingQueueOptions, DefaultedRetryOptions, IConsumerOptions, RetryStrategyEnum } from '../interface';
 import { HandlerBound } from '../lifecycle-event';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, CQRS_RETRY_STRATEGIES, PrepareHandlerStrategies, RetryStrategies } from '../provider';
 import { toEventName, toSnakeCase } from '../utils';
@@ -21,9 +21,9 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
     constructor(
         private readonly eventBus: EventBus,
-        @Inject(CQRS_RETRY_OPTIONS) private readonly rootRetryOptions: IRetryOptions,
         @Inject(CQRS_RETRY_STRATEGIES) private readonly retryStrategies: RetryStrategies,
         @Inject(CQRS_MODULE_CONSUMER_OPTIONS) protected readonly options: IConsumerOptions,
+        @Inject(CQRS_RETRY_OPTIONS) private readonly rootRetryOptions: DefaultedRetryOptions,
         @Inject(CQRS_BINDING_QUEUE_CONFIG) private readonly bindingQueueOptions: BindingQueueOptions,
         @Inject(CQRS_PREPARE_HANDLER_STRATEGIES) private readonly prepareHandlerStrategies: PrepareHandlerStrategies,
     ) {
@@ -109,7 +109,14 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
                 try {
                     await originalMethod.apply(this, [event]);
                 } catch (error) {
-                    logger.error(JSON.stringify({ error, event }), error instanceof Error ? error.stack : undefined, handler.name);
+                    logger.error(
+                        JSON.stringify({
+                            error,
+                            event,
+                        }),
+                        error instanceof Error ? error.stack : undefined,
+                        handler.name,
+                    );
                 }
             },
         });
@@ -137,7 +144,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         const wrappersWithRetryStrategy = wrappers.filter((wrapper: IHandlerWrapper) => wrapper.options.autoAck === AutoAckEnum.AUTO_RETRY);
 
         const maxRetryAttempts = Math.max(
-            this.rootRetryOptions.maxRetryAttempts ?? 0,
+            this.rootRetryOptions.maxRetryAttempts,
             ...wrappersWithRetryStrategy.map((wrapper: IHandlerWrapper) => wrapper.options.retryOptions?.maxRetryAttempts ?? 0),
         );
 
