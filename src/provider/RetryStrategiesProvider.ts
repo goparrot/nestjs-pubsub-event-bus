@@ -1,14 +1,14 @@
 import type { Provider, Type } from '@nestjs/common';
 import type { RetryStrategyEnum } from '../interface';
 import type { IRetryStrategy } from '../service';
-import { DelayedMessageExchangeRetryStrategy } from '../service';
+import { DeadLetterTtlRetryStrategy, DelayedMessageExchangeRetryStrategy } from '../service';
 
 export const CQRS_RETRY_STRATEGIES = 'CQRS_RETRY_STRATEGIES';
 
 export type RetryStrategies = Record<RetryStrategyEnum, IRetryStrategy>;
 
 export function createRetryStrategiesProviders(): Provider[] {
-    const strategies: Type<IRetryStrategy>[] = [DelayedMessageExchangeRetryStrategy];
+    const strategies: Type<IRetryStrategy>[] = [DeadLetterTtlRetryStrategy, DelayedMessageExchangeRetryStrategy];
 
     return [
         ...strategies,

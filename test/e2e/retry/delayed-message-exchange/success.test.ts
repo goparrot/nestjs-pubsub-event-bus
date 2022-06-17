@@ -2,10 +2,10 @@ import { faker } from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import _ from 'lodash';
-import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler, RetryStrategyEnum } from '../../../src';
-import { CountDownLatch, TestingCqrsModule, waitHandlerBound } from '../../util';
+import { AbstractPubsubEvent, AbstractPubsubHandler, AutoAckEnum, EventBus, PubsubEvent, PubsubEventHandler, RetryStrategyEnum } from '../../../../src';
+import { CountDownLatch, TestingCqrsModule, waitHandlerBound } from '../../../util';
 
-describe('Retry Scenarios', () => {
+describe('Retry Scenarios (Delayed message exchange)', () => {
     const maxRetryAttempts = 3;
     const delayFactory = (attempt: number): number => attempt * 100;
     let testingModule: TestingModule;
@@ -24,14 +24,13 @@ describe('Retry Scenarios', () => {
             strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
         },
         queue: faker.datatype.uuid(),
-        bindingQueueOptions: { autoDelete: true },
     })
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
         async handle(event: TestEvent): Promise<void> {
-            if (event.retryCount <= maxRetryAttempts) {
+            latch.countDown();
+            if (event.retryCount < maxRetryAttempts) {
                 throw new Error(`Failed on ${event.retryCount} attempt`);
             }
-            latch.countDown();
         }
     }
 
@@ -52,7 +51,8 @@ describe('Retry Scenarios', () => {
     });
 
     beforeEach(() => {
-        latch = new CountDownLatch(1);
+        // initial consume + 3 retries
+        latch = new CountDownLatch(maxRetryAttempts + 1);
     });
 
     afterEach(async () => {

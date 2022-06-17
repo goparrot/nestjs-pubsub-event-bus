@@ -5,7 +5,10 @@ import { CqrsModule } from '../../src';
     imports: [
         CqrsModule.forRoot({
             connections: ['amqp://localhost:5672'],
-            config: { exchange: { autoDelete: true } },
+            config: {
+                exchange: { autoDelete: true, durable: false },
+                bindings: { autoDelete: true, durable: false },
+            },
         }),
     ],
     exports: [CqrsModule],

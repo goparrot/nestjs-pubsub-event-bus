@@ -1,3 +1,4 @@
+export * from './DelayType';
 export * from './AutoAckEnum';
 export * from './IEventWrapper';
 export * from './IRetryOptions';
@@ -11,6 +12,7 @@ export * from './ICqrsModuleOptions';
 export * from './AbstractPubsubEvent';
 export * from './BindingQueueOptions';
 export * from './AbstractPubsubHandler';
+export * from './DefaultedRetryOptions';
 export * from './ICqrsModuleAsyncOptions';
 export * from './AbstractSubscriptionEvent';
 export * from './IPubsubEventHandlerMetadata';

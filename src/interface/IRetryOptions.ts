@@ -1,4 +1,5 @@
 import type { RetryStrategyEnum } from './RetryStrategyEnum';
+import type { DelayType } from './DelayType';
 
 export interface IRetryOptions {
     /**
@@ -11,7 +12,7 @@ export interface IRetryOptions {
      * Delay before each attempt. A fixed value or a function
      * @default Math.floor(1000 * Math.exp(retryCount - 1))
      */
-    delay?: number | ((retryCount: number) => number);
+    delay?: DelayType;
 
     /**
      * Retry strategy to be used

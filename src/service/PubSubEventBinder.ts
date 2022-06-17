@@ -49,7 +49,12 @@ export class PubSubEventBinder {
         const baseContext: Record<string, unknown> = { handler: handler.name, type: typeProperty };
 
         if (typeof typeProperty !== 'string') {
-            this.logger().warn(JSON.stringify({ ...baseContext, message: 'Message with invalid property "type" consumed' }));
+            this.logger().warn(
+                JSON.stringify({
+                    ...baseContext,
+                    message: 'Message with invalid property "type" consumed',
+                }),
+            );
             this.consumer.ack(message);
             return;
         }
