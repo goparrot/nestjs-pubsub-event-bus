@@ -7,7 +7,7 @@ export interface IRetryOptions {
 
     /**
      * Delay before each attempt. A fixed value or a function
-     * @default 1000 * Math.exp(retryCount)
+     * @default Math.floor(1000 * Math.exp(retryCount - 1))
      */
     delay?: number | ((retryCount: number) => number);
 }

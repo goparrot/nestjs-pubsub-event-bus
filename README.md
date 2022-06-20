@@ -22,12 +22,12 @@ It is highly recommended installing `peerDependencies` by yourself.
 Import module & configure it by providing the connection string.
 
 ```ts
-import { CqrsModule } from '@goparrot/pubsub-event-bus';
+import { CqrsModule } from "@goparrot/pubsub-event-bus";
 
-export const connections: string[] = ['amqp://username:pass@example.com/virtualhost'];
+export const connections: string[] = ["amqp://username:pass@example.com/virtualhost"];
 
 @Module({
-    imports: [CqrsModule.forRoot({ connections })],
+  imports: [CqrsModule.forRoot({ connections })],
 })
 export class AppModule {}
 ```
@@ -35,7 +35,7 @@ export class AppModule {}
 Full list of the PubSub CQRS Module options:
 
 | Options        | Description                                                                                                                                                               |
-|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | connections    | Array of connection strings                                                                                                                                               |
 | config         | AMQP connection options                                                                                                                                                   |
 | isGlobal       | Should the module be registered as global                                                                                                                                 |
@@ -53,7 +53,7 @@ Event is a simple class with message payload.
 
 ```ts
 export class StoreCreated implements IEvent {
-    constructor(private readonly storeId: string) {}
+  constructor(private readonly storeId: string) {}
 }
 ```
 
@@ -63,13 +63,13 @@ In order to make it PubSub ready, it should extend the `AbstractPubsubEvent` cla
 from `@goparrot/pubsub-event-bus`).
 
 ```ts
-import { AbstractPubsubEvent, PubsubEvent } from '@goparrot/pubsub-event-bus';
+import { AbstractPubsubEvent, PubsubEvent } from "@goparrot/pubsub-event-bus";
 
 export interface IStoreCreatedPayload {
-    storeId: string;
+  storeId: string;
 }
 
-@PubsubEvent({ exchange: 'store' })
+@PubsubEvent({ exchange: "store" })
 export class StoreCreated extends AbstractPubsubEvent<IStoreCreatedPayload> {}
 ```
 
@@ -78,20 +78,20 @@ export class StoreCreated extends AbstractPubsubEvent<IStoreCreatedPayload> {}
 Inject `EventBus` into the service in order to emit the event (imported from `@goparrot/pubsub-event-bus`).
 
 ```ts
-import { EventBus } from '@goparrot/pubsub-event-bus';
-import { Injectable } from '@nestjs/common';
+import { EventBus } from "@goparrot/pubsub-event-bus";
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 class SomeService {
-    constructor(private readonly eventBus: EventBus) {}
+  constructor(private readonly eventBus: EventBus) {}
 
-    async doCoolStuff() {
-        // create item
+  async doCoolStuff() {
+    // create item
 
-        await this.eventBus.publish(new StoreCreated({ storeId }));
+    await this.eventBus.publish(new StoreCreated({ storeId }));
 
-        // return item
-    }
+    // return item
+  }
 }
 ```
 
@@ -102,13 +102,13 @@ class SomeService {
 Create a simple class which extends `AbstractPubsubHandler` and is decorated with `PubsubEventHandler` (both imported from `@goparrot/pubsub-event-bus`).
 
 ```ts
-import { AbstractPubsubHandler, PubsubEventHandler } from '@goparrot/pubsub-event-bus';
+import { AbstractPubsubHandler, PubsubEventHandler } from "@goparrot/pubsub-event-bus";
 
 @PubsubEventHandler(StoreCreated)
 export class StoreCreatedHandler extends AbstractPubsubHandler<StoreCreated> {
-    handle(event: StoreCreated) {
-        console.log(`[${this.constructor.name}] ->`, event.payload);
-    }
+  handle(event: StoreCreated) {
+    console.log(`[${this.constructor.name}] ->`, event.payload);
+  }
 }
 ```
 
@@ -130,7 +130,7 @@ Register the event handler as provider:
 
 ```ts
 @Module({
-    providers: [StoreCreatedHandler],
+  providers: [StoreCreatedHandler],
 })
 export class AppModule {}
 ```
@@ -145,11 +145,11 @@ In order to emit an event with extra headers, just call the `withOptions({})` me
 
 ```ts
 await this.eventBus.publish(
-    new StoreCreated({ storeId: 'storeId' }).withOptions({
-        persistent: false,
-        priority: 100,
-        headers: ['...'],
-    }),
+  new StoreCreated({ storeId: "storeId" }).withOptions({
+    persistent: false,
+    priority: 100,
+    headers: ["..."],
+  }),
 );
 ```
 
@@ -158,7 +158,7 @@ await this.eventBus.publish(
 `PubsubEventHandler` decorator accepts handler options as the last argument. List of available options
 
 | Options             | Description                                                                                                  |
-|---------------------|--------------------------------------------------------------------------------------------------------------|
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
 | autoAck             | Event acknowledge mode. Default `ALWAYS_ACK`. Read more in the [Acknowledge Mode section](#acknowledge-mode) |
 | queue               | Custom queue name                                                                                            |
 | bindingQueueOptions | Queue binding options from the `amqplib`                                                                     |
@@ -199,10 +199,10 @@ ones.
 
 Available options:
 
-| Options          | Description                                                                                                                                            | Module-level default value    | Handler-level default value |
-|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|-----------------------------|
-| maxRetryAttempts | Maximum number of retry attempts                                                                                                                       | 3                             |                             |
-| delay            | Delay between retry attempts in milliseconds. Can be a fixed positive number or a function that receives current retry attempt count and returns delay | `1000 * Math.exp(retryCount)` |                             |
+| Options          | Description                                                                                                                                            | Module-level default value                    | Handler-level default value |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | --------------------------- |
+| maxRetryAttempts | Maximum number of retry attempts                                                                                                                       | 3                                             |                             |
+| delay            | Delay between retry attempts in milliseconds. Can be a fixed positive number or a function that receives current retry attempt count and returns delay | `Math.floor(1000 * Math.exp(retryCount - 1))` |                             |
 
 When number of retry attempts is exceeded handler method `onRetryAttemptsExceeded` is called with the event and last
 error as arguments. Then message is discarded.
@@ -212,41 +212,42 @@ Example:
 ```ts
 // app.module.ts
 
-import { CqrsModule } from '@goparrot/pubsub-event-bus';
+import { CqrsModule } from "@goparrot/pubsub-event-bus";
 
-export const connections: string[] = ['amqp://username:pass@example.com/virtualhost'];
+export const connections: string[] = ["amqp://username:pass@example.com/virtualhost"];
 
 @Module({
-    imports: [
-        CqrsModule.forRoot({
-            connections,
-            retryOptions: {
-                maxRetryAttempts: 5,
-                delay: (retryCount: number) => retryCount * 1000,
-            }
-        })],
+  imports: [
+    CqrsModule.forRoot({
+      connections,
+      retryOptions: {
+        maxRetryAttempts: 5,
+        delay: (retryCount: number) => retryCount * 1000,
+      },
+    }),
+  ],
 })
 export class AppModule {}
 
 // store-created.handler.ts
 
-import { AbstractPubsubHandler, PubsubEventHandler } from '@goparrot/pubsub-event-bus';
+import { AbstractPubsubHandler, PubsubEventHandler } from "@goparrot/pubsub-event-bus";
 
 @PubsubEventHandler(StoreCreated, {
-    autoAck: AutoAckEnum.AUTO_RETRY,
-    retryOptions: {
-        maxRetryAttempts: 10,
-        delay: (retryCount: number) => retryCount ** 2 * 1000,
-    }
+  autoAck: AutoAckEnum.AUTO_RETRY,
+  retryOptions: {
+    maxRetryAttempts: 10,
+    delay: (retryCount: number) => retryCount ** 2 * 1000,
+  },
 })
 export class StoreCreatedHandler extends AbstractPubsubHandler<StoreCreated> {
-    async handle(event: StoreCreated) {
-        // process the event
-    }
+  async handle(event: StoreCreated) {
+    // process the event
+  }
 
-    async onRetryAttemptsExceeded(event: T, error: Error) {
-        // log the event processing failure
-    }
+  async onRetryAttemptsExceeded(event: T, error: Error) {
+    // log the event processing failure
+  }
 }
 ```
 
