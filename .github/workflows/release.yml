@@ -32,14 +32,10 @@ jobs:
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-      - name: Read node version from `.nvmrc` file
-        id: nvmrc
-        uses: browniebroke/read-nvmrc-action@v1
-
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ steps.nvmrc.outputs.node_version }}
+          node-version-file: '.nvmrc'
           registry-url: "https://registry.npmjs.org"
 
       - name: Create and push git tag, publish version to npm and create github release
