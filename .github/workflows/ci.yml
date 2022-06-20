@@ -29,7 +29,6 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [14, 16]
-        amqp-connection-manager-version: [3, 4]
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
