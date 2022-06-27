@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v3.0.2...v4.0.1) (2022-06-27)
+
+
+### Bug Fixes
+
+* correct default retry delay function ([48db4a3](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/48db4a3f505b936c2aec3826fd516c58a5e39db4))
+
+
+### chore
+
+* drop support amqp-connection-manager@3 ([bd6a2c3](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/bd6a2c3bb19af1882e499d49a98855b4f8afc857))
+
+
+### Features
+
+* implement retry mechanism via queues with dead letter exchange and per-message ttl ([15affec](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/15affecaeeaa1d54ae42f5b60afeff27ee837260))
+
+
+### BREAKING CHANGES
+
+* Queue with dead letter exchange and per-message ttl is now the new default retry
+strategy
+* `amqp-connection-manager@3` is no longer supported
+
 ## [3.0.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v3.0.1...v3.0.2) (2022-05-26)
 
 
