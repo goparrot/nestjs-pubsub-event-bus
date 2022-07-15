@@ -4,12 +4,13 @@ import { CqrsModule as NestCqrsModule } from '@nestjs/cqrs';
 import type { AmqpConnectionManagerOptions, ConnectionUrl } from 'amqp-connection-manager';
 import type {
     BindingQueueOptions,
+    DefaultedRetryOptions,
     ExchangeOptions,
     IConsumerOptions,
     ICqrsModuleAsyncOptions,
     ICqrsModuleOptions,
+    ICqrsModuleSyncOptions,
     PublishOptions,
-    DefaultedRetryOptions,
 } from './interface';
 import { createPrepareHandlerStrategiesProviders, createRetryStrategiesProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubEventBinder, PubSubReflector, QueryBus } from './service';
@@ -119,7 +120,7 @@ export class CqrsModule implements OnApplicationBootstrap {
         private readonly pubSubEventBinder: PubSubEventBinder,
     ) {}
 
-    static forRoot(options: ICqrsModuleOptions): DynamicModule {
+    static forRoot(options: ICqrsModuleSyncOptions): DynamicModule {
         return {
             module: CqrsModule,
             global: options.isGlobal,
@@ -135,6 +136,7 @@ export class CqrsModule implements OnApplicationBootstrap {
     static forRootAsync(options: ICqrsModuleAsyncOptions): DynamicModule {
         return {
             module: CqrsModule,
+            global: options.isGlobal,
             imports: options.imports,
             providers: [
                 {

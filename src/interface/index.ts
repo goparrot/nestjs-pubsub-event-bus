@@ -13,6 +13,7 @@ export * from './AbstractPubsubEvent';
 export * from './BindingQueueOptions';
 export * from './AbstractPubsubHandler';
 export * from './DefaultedRetryOptions';
+export * from './ICqrsModuleSyncOptions';
 export * from './ICqrsModuleAsyncOptions';
 export * from './AbstractSubscriptionEvent';
 export * from './IPubsubEventHandlerMetadata';
