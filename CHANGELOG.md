@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.0.1...v4.0.2) (2022-07-18)
+
+
+### Bug Fixes
+
+* add isGlobal parameter to async module options ([083bd7a](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/083bd7aaa0ecee8c7943215f7e0342846972131d))
+
 ## [4.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v3.0.2...v4.0.1) (2022-06-27)
 
 
