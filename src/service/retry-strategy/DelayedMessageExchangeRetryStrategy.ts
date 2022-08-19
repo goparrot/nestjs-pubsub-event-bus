@@ -7,7 +7,7 @@ import { DefaultedRetryOptions, ExchangeOptions, RetryStrategyEnum } from '../..
 import { LoggerProvider } from '../../provider';
 import { CQRS_EXCHANGE_CONFIG, CQRS_RETRY_OPTIONS } from '../../utils/configuration';
 import { DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, ORIGIN_EXCHANGE_HEADER, RETRY_COUNT_HEADER } from '../../utils/retry-constants';
-import { calculateDelay } from '../../utils';
+import { calculateDelay, getMessageExchange } from '../../utils';
 import type { IRetryStrategy } from './IRetryStrategy';
 
 @Injectable()
@@ -66,7 +66,7 @@ export class DelayedMessageExchangeRetryStrategy implements IRetryStrategy {
                 ...message.properties.headers,
                 'x-delay': delayValue,
                 [RETRY_COUNT_HEADER]: retryCount,
-                [ORIGIN_EXCHANGE_HEADER]: message.properties.headers[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange,
+                [ORIGIN_EXCHANGE_HEADER]: getMessageExchange(message),
             },
         });
 

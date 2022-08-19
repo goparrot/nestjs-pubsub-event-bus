@@ -6,9 +6,8 @@ import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
 import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
 import { LoggerProvider } from '../provider';
-import { generateQueueName, toEventName } from '../utils';
+import { generateQueueName, getMessageExchange, toEventName } from '../utils';
 import { FAN_OUT_BINDING } from '../utils/configuration';
-import { ORIGIN_EXCHANGE_HEADER } from '../utils/retry-constants';
 import { Consumer } from './Consumer';
 import { EventBus } from './EventBus';
 import { PubSubReflector } from './PubSubReflector';
@@ -58,7 +57,7 @@ export class PubSubEventBinder {
             this.consumer.ack(message);
             return;
         }
-        const messageExchange = message.properties.headers[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange;
+        const messageExchange = getMessageExchange(message);
 
         // try exact match at first
         let matchedEventWrappers: IEventWrapper[] = eventWrappers.filter(

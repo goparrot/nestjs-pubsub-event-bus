@@ -16,6 +16,8 @@ export abstract class AbstractSubscriptionEvent<T extends Record<string, any> | 
     };
 
     get retryCount(): number {
-        return this.#message?.properties.headers[RETRY_COUNT_HEADER] ?? 0;
+        // incorrect typing from @types/amqplib
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        return this.#message?.properties.headers?.[RETRY_COUNT_HEADER] ?? 0;
     }
 }
