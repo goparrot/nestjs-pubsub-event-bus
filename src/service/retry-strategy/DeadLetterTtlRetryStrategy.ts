@@ -14,7 +14,7 @@ import {
     ORIGIN_EXCHANGE_HEADER,
     RETRY_COUNT_HEADER,
 } from '../../utils/retry-constants';
-import { calculateDelay } from '../../utils';
+import { calculateDelay, getMessageExchange } from '../../utils';
 import type { IRetryStrategy } from './IRetryStrategy';
 
 @Injectable()
@@ -94,7 +94,7 @@ export class DeadLetterTtlRetryStrategy implements IRetryStrategy {
             headers: {
                 ...message.properties.headers,
                 [RETRY_COUNT_HEADER]: retryCount,
-                [ORIGIN_EXCHANGE_HEADER]: message.properties.headers[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange,
+                [ORIGIN_EXCHANGE_HEADER]: getMessageExchange(message),
             },
         });
 

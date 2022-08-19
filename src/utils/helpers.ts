@@ -1,7 +1,9 @@
 import type { Type } from '@nestjs/common';
 import snakeCase from 'lodash/snakeCase';
 import startCase from 'lodash/startCase';
+import type { Message } from 'amqplib';
 import type { AbstractPubsubAnyEventHandler, DelayType } from '../interface';
+import { ORIGIN_EXCHANGE_HEADER } from './retry-constants';
 
 /**
  * Transform an event string (event class name) to a RabbitMQ event.
@@ -52,4 +54,10 @@ export function generateQueueName(handler: Type<AbstractPubsubAnyEventHandler>):
     const platform = pckName.replace(/[_-]/gi, '.');
 
     return [platform, toSnakeCase(handler.name)].join(':');
+}
+
+export function getMessageExchange(message: Message): string {
+    // incorrect typing from @types/amqplib
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    return message.properties.headers?.[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange;
 }
