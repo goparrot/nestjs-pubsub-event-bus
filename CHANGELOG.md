@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.3](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.0.2...v4.0.3) (2022-09-05)
+
+
+### Bug Fixes
+
+* use optional access to message headers ([0b3b4d2](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/0b3b4d2af1893ff9d61a713a0c7cdd5e15d2a0e1))
+
 ## [4.0.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.0.1...v4.0.2) (2022-07-18)
 
 
