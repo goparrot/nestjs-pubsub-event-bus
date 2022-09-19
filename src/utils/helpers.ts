@@ -1,8 +1,7 @@
-import type { Type } from '@nestjs/common';
 import snakeCase from 'lodash/snakeCase';
 import startCase from 'lodash/startCase';
 import type { Message } from 'amqplib';
-import type { AbstractPubsubAnyEventHandler, DelayType } from '../interface';
+import type { DelayType } from '../interface';
 import { ORIGIN_EXCHANGE_HEADER } from './retry-constants';
 
 /**
@@ -43,17 +42,8 @@ export function calculateDelay(delay: DelayType, retryCount: number): number {
     return typeof delay === 'function' ? delay(retryCount) : delay;
 }
 
-export function generateQueueName(handler: Type<AbstractPubsubAnyEventHandler>): string {
-    if (!process.env.npm_package_name) {
-        throw new Error(
-            'The application should be started using npm scripts. Otherwise npm_package_name environment variable which is required for queue name generation is missing',
-        );
-    }
-
-    const pckName: string = process.env.npm_package_name.split('/').pop() as string;
-    const platform = pckName.replace(/[_-]/gi, '.');
-
-    return [platform, toSnakeCase(handler.name)].join(':');
+export function generateQueuePrefixFromPackageName(): string | undefined {
+    return process.env.npm_package_name?.split('/')[0].replace(/[_-]/gi, '.');
 }
 
 export function getMessageExchange(message: Message): string {
