@@ -1,5 +1,12 @@
 # Changelog
 
+# [4.1.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.0.3...v4.1.0) (2022-09-19)
+
+
+### Features
+
+* add queue name prefix parameter to consumer options ([8279fc2](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/8279fc29fc1029032e048106e2d76b56898f0f9a))
+
 ## [4.0.3](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.0.2...v4.0.3) (2022-09-05)
 
 
