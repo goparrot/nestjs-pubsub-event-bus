@@ -1,20 +1,26 @@
 import type { LoggerService, Type } from '@nestjs/common';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
 import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
+import { IConsumerOptions } from '../interface';
 import { LoggerProvider } from '../provider';
-import { generateQueueName, getMessageExchange, toEventName } from '../utils';
-import { FAN_OUT_BINDING } from '../utils/configuration';
+import { generateQueuePrefixFromPackageName, getMessageExchange, toEventName, toSnakeCase } from '../utils';
+import { CQRS_MODULE_CONSUMER_OPTIONS, FAN_OUT_BINDING } from '../utils/configuration';
 import { Consumer } from './Consumer';
 import { EventBus } from './EventBus';
 import { PubSubReflector } from './PubSubReflector';
 
 @Injectable()
 export class PubSubEventBinder {
-    constructor(private readonly consumer: Consumer, private readonly eventBus: EventBus, private readonly reflector: PubSubReflector) {}
+    constructor(
+        private readonly consumer: Consumer,
+        private readonly eventBus: EventBus,
+        private readonly reflector: PubSubReflector,
+        @Inject(CQRS_MODULE_CONSUMER_OPTIONS) private readonly consumerOptions: IConsumerOptions,
+    ) {}
 
     async registerPubSubEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): Promise<void> {
         if (!handlers.length) {
@@ -139,11 +145,18 @@ export class PubSubEventBinder {
                 return;
             }
 
+            const prefix = this.consumerOptions.queueNamePrefix ?? generateQueuePrefixFromPackageName();
+            if (!prefix) {
+                throw new Error(
+                    '"config.consumer.queueNamePrefix" CQRS Module options parameter should be set or the application should be started using npm scripts.',
+                );
+            }
+
             validHandlersWithEvents.push({
                 handler,
                 eventWrappers,
                 options: omit(metadata, 'events'),
-                queue: metadata.queue ?? generateQueueName(handler),
+                queue: metadata.queue ?? [prefix, toSnakeCase(handler.name)].join(':'),
             });
         });
 
