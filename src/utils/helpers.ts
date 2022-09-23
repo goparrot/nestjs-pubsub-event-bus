@@ -1,6 +1,7 @@
 import snakeCase from 'lodash/snakeCase';
 import startCase from 'lodash/startCase';
 import type { Message } from 'amqplib';
+import last from 'lodash/last';
 import type { DelayType } from '../interface';
 import { ORIGIN_EXCHANGE_HEADER } from './retry-constants';
 
@@ -43,7 +44,7 @@ export function calculateDelay(delay: DelayType, retryCount: number): number {
 }
 
 export function generateQueuePrefixFromPackageName(): string | undefined {
-    return process.env.npm_package_name?.split('/')[0].replace(/[_-]/gi, '.');
+    return last(process.env.npm_package_name?.split('/'))?.replace(/[_-]/gi, '.');
 }
 
 export function getMessageExchange(message: Message): string {

@@ -1,4 +1,4 @@
-import { toEventClassName, toEventName, toSnakeCase } from '../../../src';
+import { generateQueuePrefixFromPackageName, toEventClassName, toEventName, toSnakeCase } from '../../../src';
 
 describe('Utils', () => {
     describe('toEventName', () => {
@@ -28,6 +28,20 @@ describe('Utils', () => {
 
         it('should disregard the Handler word', function () {
             expect(toSnakeCase('NotifyUserHandler')).toBe('notify_user');
+        });
+    });
+
+    describe('generateQueuePrefixFromPackageName', () => {
+        it.each`
+            packageName                          | expected
+            ${'@goparrot/platform-some-service'} | ${'platform.some.service'}
+            ${'@goparrot/platform-some'}         | ${'platform.some'}
+            ${'@goparrot/some-service'}          | ${'some.service'}
+            ${'some-service'}                    | ${'some.service'}
+        `('should generate queue prefix from %packageName', ({ packageName, expected }) => {
+            process.env.npm_package_name = packageName;
+
+            expect(generateQueuePrefixFromPackageName()).toBe(expected);
         });
     });
 });
