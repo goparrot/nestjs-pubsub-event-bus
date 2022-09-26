@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.1.0...v4.1.1) (2022-09-26)
+
+
+### Bug Fixes
+
+* use last split package name part as queue name prefix ([76ac63a](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/76ac63a736b476aa93f3f03e9414b04db369c128))
+
 # [4.1.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.0.3...v4.1.0) (2022-09-19)
 
 
