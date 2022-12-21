@@ -31,6 +31,7 @@ import {
     DEFAULT_QUEUE_BINDING_CONFIGURATION,
     DEFAULT_RETRY_OPTIONS,
 } from './utils/configuration';
+import { appInTestingMode } from './utils';
 
 @Module({
     imports: [NestCqrsModule],
@@ -156,6 +157,8 @@ export class CqrsModule implements OnApplicationBootstrap {
         this.eventsBus.registerSagas(sagas);
         this.eventsBus.register(events);
 
-        await this.pubSubEventBinder.registerPubSubEvents(this.explorerService.pubsubEvents());
+        if (!appInTestingMode()) {
+            await this.pubSubEventBinder.registerPubSubEvents(this.explorerService.pubsubEvents());
+        }
     }
 }

@@ -2,9 +2,8 @@ import type { LoggerService, Type } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 import { escapeRegExp, omit } from 'lodash';
-import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent, PubsubEventHandler } from '../decorator';
-import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper, IHandlerWrapper, IPubsubEventHandlerMetadata } from '../interface';
+import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IEventWrapper, IHandlerWrapper } from '../interface';
 import { IConsumerOptions } from '../interface';
 import { LoggerProvider } from '../provider';
 import { generateQueuePrefixFromPackageName, getMessageExchange, toEventName, toSnakeCase } from '../utils';
@@ -119,10 +118,17 @@ export class PubSubEventBinder {
     }
 
     private filterValidHandlersWithEvents(handlers: Type<AbstractPubsubAnyEventHandler>[]): IHandlerWrapper[] {
+        const prefix = this.consumerOptions.queueNamePrefix ?? generateQueuePrefixFromPackageName();
+        if (!prefix) {
+            throw new Error(
+                '"config.consumer.queueNamePrefix" CQRS Module options parameter should be set or the application should be started using npm scripts.',
+            );
+        }
+
         const validHandlersWithEvents: IHandlerWrapper[] = [];
 
         handlers.forEach((handler: Type<AbstractPubsubAnyEventHandler>) => {
-            const metadata: IPubsubEventHandlerMetadata | undefined = this.reflector.reflectHandlerMetadata(handler);
+            const metadata = this.reflector.reflectHandlerMetadata(handler);
             if (!metadata) {
                 this.logger().error(`Event handler "${handler.name}" should be decorated with "${PubsubEventHandler.name}"`);
                 return;
@@ -131,7 +137,7 @@ export class PubSubEventBinder {
             const eventWrappers: IEventWrapper[] = [];
 
             metadata.events.forEach((event: Type<AbstractSubscriptionEvent<any>>) => {
-                const metadata: IPubsubEventOptions | undefined = this.reflector.reflectEventMetadata(event);
+                const metadata = this.reflector.reflectEventMetadata(event);
                 if (!metadata) {
                     this.logger().error(`Event "${event.name}" should be decorated with "${PubsubEvent.name}"`);
                     return;
@@ -143,13 +149,6 @@ export class PubSubEventBinder {
             if (!eventWrappers.length) {
                 this.logger().error(`Handler "${handler.name}" has no valid events"`);
                 return;
-            }
-
-            const prefix = this.consumerOptions.queueNamePrefix ?? generateQueuePrefixFromPackageName();
-            if (!prefix) {
-                throw new Error(
-                    '"config.consumer.queueNamePrefix" CQRS Module options parameter should be set or the application should be started using npm scripts.',
-                );
             }
 
             validHandlersWithEvents.push({
