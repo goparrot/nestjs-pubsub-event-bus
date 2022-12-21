@@ -92,8 +92,4 @@ export abstract class PubsubManager implements OnModuleDestroy {
     protected logger(): LoggerService {
         return LoggerProvider.logger;
     }
-
-    protected appInTestingMode(): boolean {
-        return process.env.NODE_ENV === 'test';
-    }
 }

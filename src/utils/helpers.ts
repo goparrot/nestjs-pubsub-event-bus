@@ -52,3 +52,7 @@ export function getMessageExchange(message: Message): string {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return message.properties.headers?.[ORIGIN_EXCHANGE_HEADER] ?? message.fields.exchange;
 }
+
+export function appInTestingMode(): boolean {
+    return process.env.NODE_ENV === 'test';
+}

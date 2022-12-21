@@ -5,7 +5,7 @@ import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent } from '../decorator';
 import type { AbstractPubsubEvent } from '../interface';
 import { PublishOptions } from '../interface';
-import { toEventName } from '../utils';
+import { appInTestingMode, toEventName } from '../utils';
 import { CQRS_PRODUCER_CONFIG } from '../utils/configuration';
 import { PubsubManager } from './PubsubManager';
 import { PubSubReflector } from './PubSubReflector';
@@ -22,7 +22,7 @@ export class Producer extends PubsubManager implements OnModuleInit {
     }
 
     async onModuleInit(): Promise<void> {
-        if (this.appInTestingMode()) {
+        if (appInTestingMode()) {
             return;
         }
 
@@ -34,7 +34,7 @@ export class Producer extends PubsubManager implements OnModuleInit {
      * Produce an event.
      */
     async produce(event: AbstractPubsubEvent<any>): Promise<void> {
-        if (this.appInTestingMode()) {
+        if (appInTestingMode()) {
             return;
         }
         const metadata: IPubsubEventOptions | undefined = this.reflector.extractEventMetadata(event);

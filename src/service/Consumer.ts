@@ -7,7 +7,7 @@ import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandle
 import { AutoAckEnum, BindingQueueOptions, DefaultedRetryOptions, IConsumerOptions, RetryStrategyEnum } from '../interface';
 import { HandlerBound } from '../lifecycle-event';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, CQRS_RETRY_STRATEGIES, PrepareHandlerStrategies, RetryStrategies } from '../provider';
-import { toEventName, toSnakeCase } from '../utils';
+import { appInTestingMode, toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_RETRY_OPTIONS } from '../utils/configuration';
 import { EventBus } from './EventBus';
 import { PubsubManager } from './PubsubManager';
@@ -47,7 +47,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
      * @param onMessage - a callback that receives an event message
      */
     async consume(handlerWrapper: IHandlerWrapper, onMessage: (message: ConsumeMessage | null) => void): Promise<void> {
-        if (this.appInTestingMode()) {
+        if (appInTestingMode()) {
             return;
         }
         const { handler, eventWrappers, options, queue } = handlerWrapper;
@@ -123,14 +123,14 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     }
 
     ack(message: Message): void {
-        if (this.appInTestingMode()) {
+        if (appInTestingMode()) {
             return;
         }
         this.channelWrapper.ack(message);
     }
 
     nack(message: Message): void {
-        if (this.appInTestingMode()) {
+        if (appInTestingMode()) {
             return;
         }
         this.channelWrapper.nack(message);
