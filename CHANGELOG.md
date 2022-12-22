@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.1.1...v4.1.2) (2022-12-22)
+
+
+### Bug Fixes
+
+* skip pub-sub event registration in test mode ([cadfac0](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/cadfac09677401bb42e71ad2075b52b91f54f2d1))
+
 ## [4.1.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.1.0...v4.1.1) (2022-09-26)
 
 
