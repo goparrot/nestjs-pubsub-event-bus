@@ -7,7 +7,24 @@ PubSub Event Bus is built on top of [NestJS CQRS module](https://github.com/nest
 
 It gives the ability to use NestJS Cqrs Module across microservice architecture, using RabbitMQ message broker.
 
-## Installation
+## Table of Contents
+
+- [Installation](#installation)
+- [Import module](#import-module)
+- [Usage](#usage)
+    - [Create event](#create-event)
+    - [Publish event](#publish-event)
+    - [Consuming events](#consuming-events)
+- [Configuration](#configuration)
+    - [Event Configuration](#event-configuration)
+    - [Handler Configuration](#handler-configuration)
+- [Retry Mechanism](#retry-mechanism)
+    - [Retry Strategies](#retry-strategies)
+- [Known Issues](#known-issues)
+    - [Several handlers listening to the same event](#several-handlers-listening-to-the-same-event)
+- [Enjoy!](#enjoy-)
+
+## [Installation](#table-of-contents)
 
 First install the required package:
 
@@ -17,7 +34,7 @@ npm install --save @goparrot/pubsub-event-bus
 
 It is highly recommended installing `peerDependencies` by yourself.
 
-## Import module
+## [Import module](#table-of-contents)
 
 Import module & configure it by providing the connection string.
 
@@ -27,7 +44,7 @@ import { CqrsModule } from "@goparrot/pubsub-event-bus";
 export const connections: string[] = ["amqp://username:pass@example.com/virtualhost"];
 
 @Module({
-  imports: [CqrsModule.forRoot({ connections })],
+    imports: [CqrsModule.forRoot({ connections })],
 })
 export class AppModule {}
 ```
@@ -35,7 +52,7 @@ export class AppModule {}
 Full list of the PubSub CQRS Module options:
 
 | Options        | Description                                                                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connections    | Array of connection strings                                                                                                                                               |
 | config         | AMQP connection options                                                                                                                                                   |
 | isGlobal       | Should the module be registered as global                                                                                                                                 |
@@ -45,15 +62,16 @@ Full list of the PubSub CQRS Module options:
 
 Note: The `CqrsModule` class should be imported from `@goparrot/pubsub-event-bus` library.
 
-## Usage
+## [Usage](#table-of-contents)
 
-### Create event
+### [Create event](#table-of-contents)
 
 Event is a simple class with message payload.
 
 ```ts
 export class StoreCreated implements IEvent {
-  constructor(private readonly storeId: string) {}
+    constructor(private readonly storeId: string) {
+    }
 }
 ```
 
@@ -66,14 +84,14 @@ both imported from `@goparrot/pubsub-event-bus`).
 import { AbstractPubsubEvent, PubsubEvent } from "@goparrot/pubsub-event-bus";
 
 export interface IStoreCreatedPayload {
-  storeId: string;
+    storeId: string;
 }
 
 @PubsubEvent({ exchange: "store" })
 export class StoreCreated extends AbstractPubsubEvent<IStoreCreatedPayload> {}
 ```
 
-### Publish event
+### [Publish event](#table-of-contents)
 
 Inject `EventBus` into the service in order to emit the event (imported from `@goparrot/pubsub-event-bus`).
 
@@ -83,19 +101,20 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 class SomeService {
-  constructor(private readonly eventBus: EventBus) {}
+    constructor(private readonly eventBus: EventBus) {
+    }
 
-  async doCoolStuff() {
-    // create item
+    async doCoolStuff() {
+        // create item
 
-    await this.eventBus.publish(new StoreCreated({ storeId }));
+        await this.eventBus.publish(new StoreCreated({ storeId }));
 
-    // return item
-  }
+        // return item
+    }
 }
 ```
 
-### Consuming events
+### [Consuming events](#table-of-contents)
 
 #### Create event handler
 
@@ -107,9 +126,9 @@ import { AbstractPubsubHandler, PubsubEventHandler } from "@goparrot/pubsub-even
 
 @PubsubEventHandler(StoreCreated)
 export class StoreCreatedHandler extends AbstractPubsubHandler<StoreCreated> {
-  handle(event: StoreCreated) {
-    console.log(`[${this.constructor.name}] ->`, event.payload);
-  }
+    handle(event: StoreCreated) {
+        console.log(`[${this.constructor.name}] ->`, event.payload);
+    }
 }
 ```
 
@@ -132,35 +151,35 @@ Register the event handler as provider:
 
 ```ts
 @Module({
-  providers: [StoreCreatedHandler],
+    providers: [StoreCreatedHandler],
 })
 export class AppModule {}
 ```
 
 Once registered, event handler will start listening for incoming events.
 
-## Configuration
+## [Configuration](#table-of-contents)
 
-### Event Configuration
+### [Event Configuration](#table-of-contents)
 
 In order to emit an event with extra headers, just call the `withOptions({})` method and provide required configuration:
 
 ```ts
 await this.eventBus.publish(
-  new StoreCreated({ storeId: "storeId" }).withOptions({
-    persistent: false,
-    priority: 100,
-    headers: ["..."],
-  }),
+    new StoreCreated({ storeId: "storeId" }).withOptions({
+        persistent: false,
+        priority: 100,
+        headers: ["..."],
+    }),
 );
 ```
 
-### Handler Configuration
+### [Handler Configuration](#table-of-contents)
 
 `PubsubEventHandler` decorator accepts handler options as the last argument. List of available options
 
 | Options             | Description                                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+|---------------------|--------------------------------------------------------------------------------------------------------------|
 | autoAck             | Event acknowledge mode. Default `ALWAYS_ACK`. Read more in the [Acknowledge Mode section](#acknowledge-mode) |
 | queue               | Custom queue name                                                                                            |
 | bindingQueueOptions | Queue binding options from the `amqplib`                                                                     |
@@ -189,7 +208,7 @@ using `AbstractPubsubHandler.ack` and `AbstractPubsubHandler.nack` methods respe
 Automatic positive ack in case of success and automatic retry attempt in case of error. Read more in
 the [Retry Mechanism section](#retry-mechanism)
 
-## Retry Mechanism
+## [Retry Mechanism](#table-of-contents)
 
 PubSub Event Bus supports automatic event processing retries with static or dynamic backoff. It can be enabled by
 setting acknowledge mode to `AUTO_RETRY`. In case of any unhandled error library will publish the event to the delayed
@@ -201,7 +220,7 @@ ones.
 Available options:
 
 | Options          | Description                                                                                                                                            | Default value                                 |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|
 | maxRetryAttempts | Maximum number of retry attempts                                                                                                                       | 3                                             |
 | delay            | Delay between retry attempts in milliseconds. Can be a fixed positive number or a function that receives current retry attempt count and returns delay | `Math.floor(1000 * Math.exp(retryCount - 1))` |
 | strategy         | Retry strategy to be used. Read more in the [Retry Strategies section](#retry-strategies)                                                              | `DEAD_LETTER_TTL`                             |
@@ -219,16 +238,16 @@ import { CqrsModule, RetryStrategyEnum } from "@goparrot/pubsub-event-bus";
 export const connections: string[] = ["amqp://username:pass@example.com/virtualhost"];
 
 @Module({
-  imports: [
-    CqrsModule.forRoot({
-      connections,
-      retryOptions: {
-        maxRetryAttempts: 5,
-        delay: (retryCount: number) => retryCount * 1000,
-        strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
-      },
-    }),
-  ],
+    imports: [
+        CqrsModule.forRoot({
+            connections,
+            retryOptions: {
+                maxRetryAttempts: 5,
+                delay: (retryCount: number) => retryCount * 1000,
+                strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
+            },
+        }),
+    ],
 })
 export class AppModule {}
 
@@ -237,25 +256,25 @@ export class AppModule {}
 import { AbstractPubsubHandler, PubsubEventHandler, RetryStrategyEnum } from "@goparrot/pubsub-event-bus";
 
 @PubsubEventHandler(StoreCreated, {
-  autoAck: AutoAckEnum.AUTO_RETRY,
-  retryOptions: {
-    maxRetryAttempts: 10,
-    delay: (retryCount: number) => retryCount ** 2 * 1000,
-    strategy: RetryStrategyEnum.DEAD_LETTER_TTL,
-  },
+    autoAck: AutoAckEnum.AUTO_RETRY,
+    retryOptions: {
+        maxRetryAttempts: 10,
+        delay: (retryCount: number) => retryCount ** 2 * 1000,
+        strategy: RetryStrategyEnum.DEAD_LETTER_TTL,
+    },
 })
 export class StoreCreatedHandler extends AbstractPubsubHandler<StoreCreated> {
-  async handle(event: StoreCreated) {
-    // process the event
-  }
+    async handle(event: StoreCreated) {
+        // process the event
+    }
 
-  async onRetryAttemptsExceeded(event: StoreCreated, error: Error) {
-    // log the event processing failure
-  }
+    async onRetryAttemptsExceeded(event: StoreCreated, error: Error) {
+        // log the event processing failure
+    }
 }
 ```
 
-### Retry Strategies
+### [Retry Strategies](#table-of-contents)
 
 This library provides two different strategies for retry mechanism implementation. The main differences are requirements
 and performance.
@@ -288,4 +307,21 @@ to be installed and enabled on the RabbitMQ server.
 
 Library creates a delayed message exchange to route messages back to the source queue with a set delay.
 
-## Enjoy!
+## [Known Issues](#table-of-contents)
+
+### [Several handlers listening to the same event](#table-of-contents)
+
+**Problem:** When several handlers listen to the same event, each handler receives the same event several times (equal
+to number of listeners)
+
+**Workaround**: You can create one "proxy" pub-sub event listener that will listen to the required event. Then there are
+two options available:
+
+- It will publish a local event with the same content. Then you can create as many event listeners to this local event
+  as you need. Main disadvantage of this approach is that the pub-sub event is acknowledged in this "proxy" event
+  listener. Therefore, if something goes wrong in the actual event listeners, the library won't handle the error.
+- It will execute all the required commands. Main disadvantage of this approach is that the pub-sub event
+  acknowledgement is shared to all commands. Therefore, you should handle the double event processing in each command
+  handler.
+
+## [Enjoy!](#table-of-contents)
