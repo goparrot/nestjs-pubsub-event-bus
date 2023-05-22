@@ -53,17 +53,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: | 
+      - run: |
           node --version
           npm --version
 
       - name: Install npm dependencies
         run: npm install --progress=false --loglevel=warn --ignore-scripts
-
-      - name: Install specific amqp connection manager version
-        run: npm install --progress=false --loglevel=warn --ignore-scripts amqp-connection-manager@$VERSION
-        env:
-          VERSION: ${{ matrix.amqp-connection-manager-version }}
 
       - name: Type check
         run: npm run typecheck
@@ -79,6 +74,6 @@ jobs:
 
       - name: Run Coveralls
         uses: coverallsapp/github-action@master
-        if: startsWith(matrix.node-version, '16.')
+        if: startsWith(matrix.node-version, '18.')
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
