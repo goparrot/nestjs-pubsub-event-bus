@@ -13,7 +13,7 @@ describe('Retry Scenarios (Dead Letter Exchange and message expiration)', () => 
     let testHandler: TestHandler;
     let latch: CountDownLatch;
 
-    @PubsubEvent({ exchange: faker.datatype.uuid() })
+    @PubsubEvent({ exchange: faker.string.uuid() })
     class TestEvent extends AbstractPubsubEvent<Record<string, unknown>> {}
 
     @PubsubEventHandler(TestEvent, {
@@ -23,7 +23,7 @@ describe('Retry Scenarios (Dead Letter Exchange and message expiration)', () => 
             delay: delayFactory,
             strategy: RetryStrategyEnum.DEAD_LETTER_TTL,
         },
-        queue: faker.datatype.uuid(),
+        queue: faker.string.uuid(),
     })
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
         async handle(event: TestEvent): Promise<void> {

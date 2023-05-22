@@ -10,10 +10,10 @@ describe('Basic Scenarios', () => {
     let testHandler: TestHandler;
     let latch: CountDownLatch;
 
-    @PubsubEvent({ exchange: faker.datatype.uuid() })
+    @PubsubEvent({ exchange: faker.string.uuid() })
     class TestEvent extends AbstractPubsubEvent<Record<string, unknown>> {}
 
-    @PubsubEventHandler(TestEvent, { queue: faker.datatype.uuid(), bindingQueueOptions: { autoDelete: true } })
+    @PubsubEventHandler(TestEvent, { queue: faker.string.uuid(), bindingQueueOptions: { autoDelete: true } })
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
         async handle(_event: TestEvent): Promise<void> {
             latch.countDown();
