@@ -68,7 +68,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
 
         await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
             await Promise.all([
-                ...exchangesToAssert.map((exchange: string) => channel.assertExchange(exchange, 'topic', this.assertExchangeOptions)),
+                ...exchangesToAssert.map(async (exchange: string) => channel.assertExchange(exchange, 'topic', this.assertExchangeOptions)),
                 channel.assertQueue(queue, this.bindingOptions(options.bindingQueueOptions)),
                 ...this.bindEvents(channel, queue, eventWrappers),
                 channel.consume(queue, (msg: ConsumeMessage | null) => {

@@ -13,7 +13,7 @@ describe('Retry Scenarios (attempts exceeded) (Delayed message exchange)', () =>
     let testHandler: TestHandler;
     let latch: CountDownLatch;
 
-    @PubsubEvent({ exchange: faker.datatype.uuid() })
+    @PubsubEvent({ exchange: faker.string.uuid() })
     class TestEvent extends AbstractPubsubEvent<Record<string, unknown>> {}
 
     @PubsubEventHandler(TestEvent, {
@@ -23,7 +23,7 @@ describe('Retry Scenarios (attempts exceeded) (Delayed message exchange)', () =>
             delay: delayFactory,
             strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
         },
-        queue: faker.datatype.uuid(),
+        queue: faker.string.uuid(),
     })
     class TestHandler extends AbstractPubsubHandler<TestEvent> {
         async handle(event: TestEvent): Promise<void> {
