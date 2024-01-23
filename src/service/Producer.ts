@@ -17,7 +17,10 @@ export class Producer extends PubsubManager implements OnModuleInit {
      */
     private readonly exchanges: Set<string> = new Set<string>();
 
-    constructor(private readonly reflector: PubSubReflector, @Inject(CQRS_PRODUCER_CONFIG) private readonly producerOptions: PublishOptions) {
+    constructor(
+        private readonly reflector: PubSubReflector,
+        @Inject(CQRS_PRODUCER_CONFIG) private readonly producerOptions: PublishOptions,
+    ) {
         super();
     }
 

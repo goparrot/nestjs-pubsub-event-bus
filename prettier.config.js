@@ -2,6 +2,8 @@
  * ===== NOTE =====
  * If you want to update the rules in this file, you MUST also update them in the .editorconfig file
  * ================
+ *
+ * @type {import('prettier').Config}
  */
 module.exports = {
     tabWidth: 2,
@@ -17,6 +19,12 @@ module.exports = {
             options: {
                 tabWidth: 4,
                 singleQuote: true,
+            },
+        },
+        {
+            files: ['*.json'],
+            options: {
+                trailingComma: 'none',
             },
         },
     ],
