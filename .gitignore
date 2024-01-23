@@ -17,7 +17,6 @@ dokcer-compose.yml
 /.nyc_output/
 /test-reports/
 node_modules
-package-lock.json
 .eslintcache
 !/bin/
 report.*.json

@@ -39,7 +39,7 @@ jobs:
 
       - name: Create and push git tag, publish version to npm and create github release
         run: |
-          npm install --progress=false --loglevel=warn --ignore-scripts
+          npm ci --progress=false --loglevel=warn --ignore-scripts
           npm run release -- ${RELEASE_IT_OPTIONS[@]}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}

@@ -19,8 +19,7 @@
         "url": "git+ssh://git@github.com/goparrot/nestjs-pubsub-event-bus.git"
     },
     "engines": {
-        "node": ">=16",
-        "npm": "^8"
+        "node": ">=16"
     },
     "directories": {
         "bin": "./bin",
