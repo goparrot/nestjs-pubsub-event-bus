@@ -91,6 +91,7 @@
         "@nestjs/testing": "^10.2.10",
         "@release-it/conventional-changelog": "^5.1.1",
         "@types/amqplib": "^0.10.1",
+        "@types/eslint": "^8.56.2",
         "@types/jest": "^29.5.1",
         "@types/lodash": "^4.14.194",
         "@types/minimist": "^1.2.2",

@@ -19,7 +19,12 @@ export class EventBus extends NestEventBus<IEvent> {
         this._pubSubPublisher = pubSubPublisher;
     }
 
-    constructor(commandBus: CommandBus, moduleRefs: ModuleRef, unhandledExceptionBus: UnhandledExceptionBus, private readonly producer: Producer) {
+    constructor(
+        commandBus: CommandBus,
+        moduleRefs: ModuleRef,
+        unhandledExceptionBus: UnhandledExceptionBus,
+        private readonly producer: Producer,
+    ) {
         super(commandBus, moduleRefs, unhandledExceptionBus);
         this.usePubSubPublisher();
     }

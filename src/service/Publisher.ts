@@ -7,7 +7,10 @@ import { Producer } from './Producer';
 
 @Injectable()
 export class Publisher<EventBase extends IEvent = IEvent> extends DefaultPubSub<EventBase> {
-    constructor(subject$: Subject<EventBase>, private readonly producer: Producer) {
+    constructor(
+        subject$: Subject<EventBase>,
+        private readonly producer: Producer,
+    ) {
         super(subject$);
     }
 
