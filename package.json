@@ -88,7 +88,7 @@
         "@nestjs/core": "^10.2.10",
         "@nestjs/cqrs": "^10.2.6",
         "@nestjs/testing": "^10.2.10",
-        "@release-it/conventional-changelog": "^5.1.1",
+        "@release-it/conventional-changelog": "^6.0.0",
         "@types/amqplib": "^0.10.1",
         "@types/eslint": "^8.56.2",
         "@types/jest": "^29.5.1",
