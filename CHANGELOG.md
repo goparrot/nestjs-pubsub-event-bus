@@ -1,5 +1,17 @@
 # Changelog
 
+# [5.0.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.1.2...v5.0.0) (2024-01-24)
+
+
+### Bug Fixes
+
+* minimal node version >=16 ([b3d89c1](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/b3d89c18e7611eef4327037bd4c6ba0f0d9e9ea9))
+
+
+### Features
+
+* support nestjs 10 ([faec7f0](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/faec7f053bb5b10de1122bb3c3d3f88aad73125a))
+
 ## [4.1.2](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.1.1...v4.1.2) (2022-12-22)
 
 
