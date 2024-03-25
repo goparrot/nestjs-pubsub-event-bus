@@ -78,7 +78,7 @@
         "tslib": "^2.5.2"
     },
     "devDependencies": {
-        "@commitlint/cli": "^17.6.3",
+        "@commitlint/cli": "^19.2.1",
         "@commitlint/config-conventional": "^17.6.3",
         "@faker-js/faker": "^8.0.1",
         "@goparrot/eslint-config": "^1.1.1",
