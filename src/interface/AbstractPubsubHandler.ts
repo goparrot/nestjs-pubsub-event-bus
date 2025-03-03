@@ -18,5 +18,5 @@ export abstract class AbstractPubsubHandler<T extends AbstractSubscriptionEvent<
      * This method should be used only when automatic acknowledge is disabled.
      * This method should not be overridden
      */
-    nack(_event: AbstractSubscriptionEvent<any>): void {}
+    nack(_event: AbstractSubscriptionEvent<any>, _requeue?: boolean): void {}
 }

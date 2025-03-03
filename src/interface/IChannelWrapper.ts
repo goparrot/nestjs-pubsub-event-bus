@@ -4,7 +4,7 @@ import type { PublishOptions } from './PublishOptions';
 export interface IChannelWrapper {
     ack(message: Message): void;
 
-    nack(message: Message): void;
+    nack(message: Message, requeue?: boolean): void;
 
     publish(exchange: string, routingKey: string, content: Buffer | string | unknown, options?: PublishOptions): Promise<void>;
 }
