@@ -129,11 +129,11 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
         this.channelWrapper.ack(message);
     }
 
-    nack(message: Message): void {
+    nack(message: Message, requeue?: boolean): void {
         if (appInTestingMode()) {
             return;
         }
-        this.channelWrapper.nack(message);
+        this.channelWrapper.nack(message, false, requeue);
     }
 
     async publish(exchange: string, routingKey: string, content: Buffer | string | unknown, options?: PublishOptions): Promise<void> {
