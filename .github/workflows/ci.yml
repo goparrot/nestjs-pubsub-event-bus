@@ -30,13 +30,14 @@ jobs:
       matrix:
         node-version: [18, 20, 22]
         nestjs-version: [10, 11]
+        rabbitmq-version: ['3.13.3', '4.1.0']
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     services:
       rabbitmq:
-        image: heidiks/rabbitmq-delayed-message-exchange:3.13.3-management
+        image: heidiks/rabbitmq-delayed-message-exchange:${{ matrix.rabbitmq-version }}-management
         ports:
           - 5672:5672
         options:
@@ -49,7 +50,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }} with NestJS ${{ matrix.nestjs-version }}
+      - name: Use Node.js ${{ matrix.node-version }} with NestJS ${{ matrix.nestjs-version }} and RabbitMQ ${{ matrix.rabbitmq-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -83,6 +84,6 @@ jobs:
 
       - name: Run Coveralls
         uses: coverallsapp/github-action@master
-        if: matrix.node-version == 18 && matrix.nestjs-version == 11
+        if: matrix.node-version == 18 && matrix.nestjs-version == 11 && matrix.rabbitmq-version == '4.1.0'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
