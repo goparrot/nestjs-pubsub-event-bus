@@ -28,14 +28,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16, 18, 20]
+        node-version: [18, 20, 22]
+        nestjs-version: [10, 11]
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     services:
       rabbitmq:
-        image: heidiks/rabbitmq-delayed-message-exchange
+        image: heidiks/rabbitmq-delayed-message-exchange:3.13.3-management
         ports:
           - 5672:5672
         options:
@@ -48,7 +49,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }} with NestJS ${{ matrix.nestjs-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -59,6 +60,14 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci --progress=false --loglevel=warn --ignore-scripts
+
+      - name: Install NestJS ${{ matrix.nestjs-version }}
+        run: |
+          npm install --save-dev \
+            @nestjs/common@^${{ matrix.nestjs-version }} \
+            @nestjs/core@^${{ matrix.nestjs-version }} \
+            @nestjs/cqrs@^${{ matrix.nestjs-version }} \
+            @nestjs/testing@^${{ matrix.nestjs-version }}
 
       - name: Type check
         run: npm run typecheck
@@ -74,6 +83,6 @@ jobs:
 
       - name: Run Coveralls
         uses: coverallsapp/github-action@master
-        if: startsWith(matrix.node-version, '18.')
+        if: matrix.node-version == 18 && matrix.nestjs-version == 11
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

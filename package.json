@@ -1,7 +1,7 @@
 {
     "name": "@goparrot/pubsub-event-bus",
     "description": "NestJS EventBus extension for RabbitMQ PubSub",
-    "version": "5.0.0",
+    "version": "6.0.0",
     "author": "GoParrot",
     "keywords": [
         "NestJS",
@@ -19,7 +19,7 @@
         "url": "git+ssh://git@github.com/goparrot/nestjs-pubsub-event-bus.git"
     },
     "engines": {
-        "node": ">=16"
+        "node": ">=18"
     },
     "directories": {
         "bin": "./bin",
@@ -66,9 +66,9 @@
         "publish:dev:dry": "npm run publish -- --dry-run"
     },
     "peerDependencies": {
-        "@nestjs/common": "^10.0.0",
-        "@nestjs/core": "^10.0.0",
-        "@nestjs/cqrs": "^10.0.0",
+        "@nestjs/common": "^10.0.0 || ^11.0.0",
+        "@nestjs/core": "^10.0.0 || ^11.0.0",
+        "@nestjs/cqrs": "^10.0.0 || ^11.0.0",
         "amqp-connection-manager": "^4.0.0",
         "amqplib": ">=0.5",
         "reflect-metadata": ">=0.1.13"
@@ -82,10 +82,10 @@
         "@commitlint/config-conventional": "^17.6.3",
         "@faker-js/faker": "^8.0.1",
         "@goparrot/eslint-config": "^1.1.1",
-        "@nestjs/common": "^10.2.10",
-        "@nestjs/core": "^10.2.10",
-        "@nestjs/cqrs": "^10.2.6",
-        "@nestjs/testing": "^10.2.10",
+        "@nestjs/common": "^11.1.10",
+        "@nestjs/core": "^11.1.10",
+        "@nestjs/cqrs": "^11.0.3",
+        "@nestjs/testing": "^11.1.10",
         "@types/amqplib": "^0.10.1",
         "@types/eslint": "^8.56.2",
         "@types/jest": "^29.5.1",

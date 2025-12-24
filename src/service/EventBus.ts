@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { IEvent } from '@nestjs/cqrs';
 import { EventBus as NestEventBus, UnhandledExceptionBus } from '@nestjs/cqrs';
@@ -23,7 +23,7 @@ export class EventBus extends NestEventBus<IEvent> {
         commandBus: CommandBus,
         moduleRefs: ModuleRef,
         unhandledExceptionBus: UnhandledExceptionBus,
-        private readonly producer: Producer,
+        @Inject(Producer) private readonly producer: Producer,
     ) {
         super(commandBus, moduleRefs, unhandledExceptionBus);
         this.usePubSubPublisher();
