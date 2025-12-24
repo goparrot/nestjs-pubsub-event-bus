@@ -1,5 +1,43 @@
 # Changelog
 
+# [7.0.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v5.0.0...v7.0.0) (2024-12-24)
+
+### Features
+
+- **rabbitmq:** add RabbitMQ 4.x support with dual 3.13/4.x compatibility
+- **ci:** add RabbitMQ version matrix testing (3.13.3 and 4.1.0)
+- **docker:** add RABBITMQ_VERSION environment variable support for testing
+
+### BREAKING CHANGES
+
+- **deps:** minimum `amqplib` version increased from `>=0.5` to `>=0.10.7`
+  - Required for RabbitMQ 4.1.0+ compatibility (frame_max requirement)
+  - Consumers must upgrade `amqplib` to `>=0.10.7` before upgrading this library
+
+### Migration Guide
+
+**Before upgrading to v7.0.0:**
+
+```bash
+# 1. Check current amqplib version
+npm list amqplib
+
+# 2. Upgrade amqplib to 0.10.7 or later
+npm install amqplib@^0.10.9
+
+# 3. Then upgrade the library
+npm install @goparrot/pubsub-event-bus@^7.0.0
+```
+
+**No code changes required!** The library API remains unchanged and works identically with both RabbitMQ 3.13.x and 4.x.
+
+### Technical Details
+
+- RabbitMQ 4.1.0 increased minimum `frame_max` from 4096 to 8192 bytes
+- amqplib 0.10.7+ defaults to `frame_max=131072` for compatibility
+- Library maintains backward compatibility with RabbitMQ 3.13.x
+- CI/CD now tests 12 combinations: 3 Node versions × 2 NestJS versions × 2 RabbitMQ versions
+
 # [6.0.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v5.0.0...v6.0.0) (2025-12-24)
 
 ### Bug Fixes
