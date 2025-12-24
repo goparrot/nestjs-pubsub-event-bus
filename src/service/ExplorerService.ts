@@ -13,8 +13,20 @@ export class ExplorerService extends NestExplorerService {
     }
 
     pubsubEvents(): Type<AbstractPubsubAnyEventHandler>[] {
-        return this.flatMap<AbstractPubsubAnyEventHandler>([...this.modules.values()], (instance: InstanceWrapper) => {
-            return this.filterProvider(instance, PUBSUB_EVENT_HANDLER_METADATA);
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const baseService: any = this;
+        const modules = [...this.modules.values()];
+
+        if ('filterByMetadataKey' in this) {
+            // NestJS 11: flatMap returns InstanceWrapper[], extract metatype
+            const wrappers = baseService.flatMap(modules, (instance: InstanceWrapper) => {
+                return baseService.filterByMetadataKey(instance, PUBSUB_EVENT_HANDLER_METADATA);
+            });
+            return wrappers.map((wrapper: any) => wrapper.metatype).filter((metatype: any): metatype is Type<AbstractPubsubAnyEventHandler> => !!metatype);
+        }
+
+        return baseService.flatMap(modules, (instance: InstanceWrapper) => {
+            return baseService.filterProvider(instance, PUBSUB_EVENT_HANDLER_METADATA);
         });
     }
 }
