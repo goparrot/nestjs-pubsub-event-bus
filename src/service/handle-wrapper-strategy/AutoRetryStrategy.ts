@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { AbstractPubsubAnyEventHandler, AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { AutoAckEnum, DefaultedRetryOptions, ExchangeOptions } from '../../interface';
-import { CQRS_RETRY_STRATEGIES, RetryStrategies } from '../../provider';
+import { CQRS_RETRY_STRATEGIES, LoggerProvider, RetryStrategies } from '../../provider';
 import { CQRS_EXCHANGE_CONFIG, CQRS_RETRY_OPTIONS } from '../../utils/configuration';
 import { AbstractHandleWrapperStrategy } from './AbstractHandleWrapperStrategy';
 
@@ -39,7 +39,7 @@ export class AutoRetryStrategy extends AbstractHandleWrapperStrategy {
                     if (event.retryCount >= maxRetryAttempts) {
                         await (this as AbstractPubsubAnyEventHandler).onRetryAttemptsExceeded?.(event, error);
                         logger.warn(
-                            `Maximum number of retry attempts (${maxRetryAttempts}) exceeded. Discarded message: ${JSON.stringify(event)}`,
+                            `Maximum number of retry attempts (${maxRetryAttempts}) exceeded. Discarded message: ${LoggerProvider.stringify(event)}`,
                             handler.name,
                         );
                         return;

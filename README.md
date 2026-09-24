@@ -95,14 +95,15 @@ export class AppModule {}
 
 Full list of the PubSub CQRS Module options:
 
-| Options        | Description                                                                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| connections    | Array of connection strings                                                                                                                                               |
-| config         | AMQP connection options                                                                                                                                                   |
-| isGlobal       | Should the module be registered as global                                                                                                                                 |
-| logger         | Logger service to be used                                                                                                                                                 |
-| connectionName | Name of the connection to be displayed in the server logs and management UI. Final name will have a suffix `:producer` or `:consumer` depending on the connection purpose |
-| retryOptions   | Global options for the retry mechanism. Read more in the [Retry Mechanism section](#retry-mechanism)                                                                      |
+| Options         | Description                                                                                                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| connections     | Array of connection strings                                                                                                                                                                        |
+| config          | AMQP connection options                                                                                                                                                                            |
+| isGlobal        | Should the module be registered as global                                                                                                                                                          |
+| logger          | Logger service to be used                                                                                                                                                                          |
+| redactedLogKeys | Keys whose values are replaced with `[redacted]`, at any depth, wherever an event is written to the logs. The payload published to RabbitMQ is not affected. Example: `/token\|password\|secret/i` |
+| connectionName  | Name of the connection to be displayed in the server logs and management UI. Final name will have a suffix `:producer` or `:consumer` depending on the connection purpose                          |
+| retryOptions    | Global options for the retry mechanism. Read more in the [Retry Mechanism section](#retry-mechanism)                                                                                               |
 
 Note: The `CqrsModule` class should be imported from `@goparrot/pubsub-event-bus` library.
 

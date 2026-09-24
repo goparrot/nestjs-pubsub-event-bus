@@ -22,6 +22,13 @@ export interface ICqrsModuleOptions {
     logger?: LoggerService;
 
     /**
+     * Keys whose values are replaced with `[redacted]`, at any depth, wherever an event is written to the logs (publish, failed publish,
+     * failing handler, discarded retry). The payload published to RabbitMQ is not affected
+     * @example /token|password|secret/i
+     */
+    redactedLogKeys?: RegExp;
+
+    /**
      * Name of the connection to be displayed in the server logs and management UI. Final name will have a suffix `:producer` or `:consumer` depending on the
      * connection purpose
      * @example `service-name-${uuid.v4()}`

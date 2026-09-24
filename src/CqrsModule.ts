@@ -54,7 +54,7 @@ import { appInTestingMode } from './utils';
         {
             provide: LoggerProvider,
             useFactory(options: ICqrsModuleOptions): LoggerProvider {
-                return LoggerProvider.forLogger(options.logger || new Logger());
+                return LoggerProvider.forLogger(options.logger || new Logger(), options.redactedLogKeys);
             },
             inject: [CQRS_MODULE_OPTIONS],
         },

@@ -4,6 +4,7 @@ import type { ConfirmChannel } from 'amqplib';
 import type { IPubsubEventOptions } from '../decorator';
 import { PubsubEvent } from '../decorator';
 import type { AbstractPubsubEvent } from '../interface';
+import { LoggerProvider } from '../provider';
 import { PublishOptions } from '../interface';
 import { appInTestingMode, toEventName } from '../utils';
 import { CQRS_PRODUCER_CONFIG } from '../utils/configuration';
@@ -54,7 +55,7 @@ export class Producer extends PubsubManager implements OnModuleInit {
         const routingKey: string = customRoutingKey ?? toEventName(event.constructor.name);
         const headers: PublishOptions = { ...this.headers(event.getOptions()), type: routingKey };
 
-        const message: string = `Event "${routingKey}" to "${exchange}" with ${JSON.stringify({ event, headers })}`;
+        const message: string = `Event "${routingKey}" to "${exchange}" with ${LoggerProvider.stringify({ event, headers })}`;
         try {
             await this.channelWrapper.publish(exchange, routingKey, event.payload, headers);
             this.logger().log(`${message} -> PUBLISHED.`);

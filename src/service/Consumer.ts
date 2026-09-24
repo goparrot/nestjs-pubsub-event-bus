@@ -6,7 +6,7 @@ import { chain } from 'lodash';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
 import { AutoAckEnum, BindingQueueOptions, DefaultedRetryOptions, IConsumerOptions, RetryStrategyEnum } from '../interface';
 import { HandlerBound } from '../lifecycle-event';
-import { CQRS_PREPARE_HANDLER_STRATEGIES, CQRS_RETRY_STRATEGIES, PrepareHandlerStrategies, RetryStrategies } from '../provider';
+import { CQRS_PREPARE_HANDLER_STRATEGIES, CQRS_RETRY_STRATEGIES, LoggerProvider, PrepareHandlerStrategies, RetryStrategies } from '../provider';
 import { appInTestingMode, toEventName, toSnakeCase } from '../utils';
 import { CQRS_BINDING_QUEUE_CONFIG, CQRS_MODULE_CONSUMER_OPTIONS, CQRS_RETRY_OPTIONS } from '../utils/configuration';
 import { EventBus } from './EventBus';
@@ -110,7 +110,7 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
                     await originalMethod.apply(this, [event]);
                 } catch (error) {
                     logger.error(
-                        JSON.stringify({
+                        LoggerProvider.stringify({
                             error,
                             event,
                         }),
