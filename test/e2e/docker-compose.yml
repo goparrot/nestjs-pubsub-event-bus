@@ -1,10 +1,16 @@
-version: "3"
-
 services:
   rabbitmq:
-    image: heidiks/rabbitmq-delayed-message-exchange
+    # Use RABBITMQ_VERSION environment variable to test different versions
+    # Default: RabbitMQ 3.13.3 (for backward compatibility)
+    # Usage: RABBITMQ_VERSION=4.1.0 docker-compose up
+    image: heidiks/rabbitmq-delayed-message-exchange:${RABBITMQ_VERSION:-3.13.3}-management
     ports:
       - "4369:4369"
       - "5672:5672"
       - "15672:15672"
       - "25672:25672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q check_virtual_hosts
+      interval: 10s
+      timeout: 5s
+      retries: 5

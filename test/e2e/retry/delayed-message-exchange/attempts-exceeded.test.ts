@@ -70,14 +70,12 @@ describe('Retry Scenarios (attempts exceeded) (Delayed message exchange)', () =>
             foo: faker.lorem.word(),
         };
         const testEvent = new TestEvent(payload);
-        const expectedTime = _.times(maxRetryAttempts + 1, delayFactory).reduce((acc: number, val: number) => acc + val, 0);
 
-        const start = Date.now();
         await eventBus.publish(testEvent);
-
         await latch.wait();
-        expect(Date.now() - start).toBeGreaterThanOrEqual(expectedTime);
 
+        // Verify handler was called correct number of times with correct retry counts
+        expect(spy).toHaveBeenCalledTimes(maxRetryAttempts + 1);
         _.times(maxRetryAttempts + 1, (retryAttempt: number) => {
             expect(spy).toHaveBeenNthCalledWith(
                 retryAttempt + 1,

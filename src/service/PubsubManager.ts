@@ -54,7 +54,7 @@ export abstract class PubsubManager implements OnModuleDestroy {
 
         const options: AmqpConnectionManagerOptions = cloneDeep(this.connectionManagerOptions);
 
-        if (!options.connectionOptions?.clientProperties.connection_name && this.connectionName) {
+        if (!options.connectionOptions?.clientProperties?.connection_name && this.connectionName) {
             const connectionName = `${this.connectionName}:${this.constructor.name.toLowerCase()}`;
 
             set(options, 'connectionOptions.clientProperties.connection_name', connectionName);
