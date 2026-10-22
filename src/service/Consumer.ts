@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import type { LoggerService } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
@@ -19,6 +20,11 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
      */
     private readonly exchanges: Set<string> = new Set<string>();
 
+    /**
+     * Queue names by consumer tag, used to report consumers cancelled by the broker
+     */
+    private readonly consumerQueues: Map<string, string> = new Map<string, string>();
+
     constructor(
         private readonly eventBus: EventBus,
         @Inject(CQRS_RETRY_STRATEGIES) private readonly retryStrategies: RetryStrategies,
@@ -31,6 +37,14 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     }
 
     async setupChannel(channel: ConfirmChannel): Promise<void> {
+        // The broker cancels consumers while the connection stays up, e.g. when the queue is deleted or its home node
+        // restarts. The channel wrapper re-subscribes them; this listener only makes the cancellation visible in logs.
+        // Do not add an 'error' listener on this channel: an unhandled channel error closes the connection, and that
+        // reconnect is what recovers a consumer whose queue is still unavailable when it re-subscribes.
+        channel.on('cancel', ({ consumerTag }: { consumerTag: string }) => {
+            this.logger().warn(`Consumer of queue "${this.consumerQueues.get(consumerTag) ?? consumerTag}" was cancelled by the broker, re-subscribing`);
+        });
+
         if (this.options.prefetchPerConsumer) {
             await channel.prefetch(this.options.prefetchPerConsumer, false);
         }
@@ -71,18 +85,36 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
                 ...exchangesToAssert.map(async (exchange: string) => channel.assertExchange(exchange, 'topic', this.assertExchangeOptions)),
                 channel.assertQueue(queue, this.bindingOptions(options.bindingQueueOptions)),
                 ...this.bindEvents(channel, queue, eventWrappers),
-                channel.consume(queue, (msg: ConsumeMessage | null) => {
-                    try {
-                        onMessage(msg);
-                    } catch (e) {
-                        this.logger().warn(`Message execution/acknowledge error: [${(e as Error).message}]`);
-                    }
-                }),
             ]);
 
             this.logger().log(`Listening for "${bindingPatterns.join(', ')}" events from [${handlerExchanges.join(', ')} <- ${queue}]`);
             await this.eventBus.publish(new HandlerBound(handler.name));
         });
+
+        // Consume through the channel wrapper, not with `channel.consume` inside the setup function above. A setup
+        // function only re-runs when the connection is re-established, so a consumer cancelled by the broker (null
+        // message) stayed gone while the connection looked healthy, and the queue was left without consumers until the
+        // process restarted. The channel wrapper re-subscribes on cancellation and after every reconnect, once all
+        // setup functions (queue assertion and bindings) have run.
+        const consumerTag: string = randomUUID();
+        this.consumerQueues.set(consumerTag, queue);
+
+        try {
+            await this.channelWrapper.consume(
+                queue,
+                (msg: ConsumeMessage) => {
+                    try {
+                        onMessage(msg);
+                    } catch (e) {
+                        this.logger().warn(`Message execution/acknowledge error: [${(e as Error).message}]`);
+                    }
+                },
+                { consumerTag },
+            );
+        } catch (e) {
+            // The consumer stays registered in the channel wrapper and is re-subscribed after reconnecting
+            this.logger().error(`Failed to consume from queue "${queue}": ${(e as Error).message}`, (e as Error).stack);
+        }
     }
 
     extractBindingPattern(mappedEvent: IEventWrapper): string {
