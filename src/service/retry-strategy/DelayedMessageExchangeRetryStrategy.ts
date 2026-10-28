@@ -64,7 +64,8 @@ export class DelayedMessageExchangeRetryStrategy implements IRetryStrategy {
             type: message.properties.type,
             headers: {
                 ...message.properties.headers,
-                'x-delay': delayValue,
+                // amqplib encodes integers below 128 as a signed byte, which the delayed message exchange ignores
+                'x-delay': { '!': 'long', value: delayValue },
                 [RETRY_COUNT_HEADER]: retryCount,
                 [ORIGIN_EXCHANGE_HEADER]: getMessageExchange(message),
             },
