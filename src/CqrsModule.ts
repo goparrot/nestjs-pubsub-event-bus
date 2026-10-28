@@ -12,7 +12,7 @@ import type {
     ICqrsModuleSyncOptions,
     PublishOptions,
 } from './interface';
-import { createPrepareHandlerStrategiesProviders, createRetryStrategiesProviders, LoggerProvider } from './provider';
+import { createPrepareHandlerStrategiesProviders, createRetryStrategiesProviders, createUnhandledExceptionBusProviders, LoggerProvider } from './provider';
 import { CommandBus, Consumer, EventBus, ExplorerService, Producer, PubSubEventBinder, PubSubReflector, QueryBus } from './service';
 import {
     CQRS_BINDING_QUEUE_CONFIG,
@@ -109,6 +109,7 @@ import { appInTestingMode } from './utils';
         },
         ...createRetryStrategiesProviders(),
         ...createPrepareHandlerStrategiesProviders(),
+        ...createUnhandledExceptionBusProviders(),
     ],
     exports: [EventBus, CommandBus, QueryBus, Producer, Consumer],
 })
