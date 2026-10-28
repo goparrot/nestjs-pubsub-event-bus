@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v5.0.0...v5.0.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* recover consumers cancelled by the broker ([619db67](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/619db67ad1acda9d96cea5efa078b1ed24c6de5b))
+* send x-delay as a long ([89f921c](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/89f921c940188b27ff0d057aed5c996b6b4bf83c))
+* use the module retry strategy for handlers without one ([3353ccb](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/3353ccbc10a3cd106266113c17e0dd176c2fdd47))
+
 # [5.0.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v4.1.2...v5.0.0) (2024-01-24)
 
 
