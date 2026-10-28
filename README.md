@@ -20,6 +20,7 @@ It gives the ability to use NestJS Cqrs Module across microservice architecture,
     - [Handler Configuration](#handler-configuration)
 - [Retry Mechanism](#retry-mechanism)
     - [Retry Strategies](#retry-strategies)
+- [Connection and Consumer Recovery](#connection-and-consumer-recovery)
 - [Known Issues](#known-issues)
     - [Several handlers listening to the same event](#several-handlers-listening-to-the-same-event)
 - [Enjoy!](#enjoy-)
@@ -41,7 +42,7 @@ Import module & configure it by providing the connection string.
 ```ts
 import { CqrsModule } from "@goparrot/pubsub-event-bus";
 
-export const connections: string[] = ["amqp://username:pass@example.com/virtualhost"];
+export const connections: string[] = [process.env.RABBITMQ_URL ?? "amqp://localhost"];
 
 @Module({
     imports: [CqrsModule.forRoot({ connections })],
@@ -235,7 +236,7 @@ Example:
 
 import { CqrsModule, RetryStrategyEnum } from "@goparrot/pubsub-event-bus";
 
-export const connections: string[] = ["amqp://username:pass@example.com/virtualhost"];
+export const connections: string[] = [process.env.RABBITMQ_URL ?? "amqp://localhost"];
 
 @Module({
     imports: [
@@ -306,6 +307,35 @@ This strategy requires [RabbitMQ Delayed Message Plugin](https://github.com/rabb
 to be installed and enabled on the RabbitMQ server.
 
 Library creates a delayed message exchange to route messages back to the source queue with a set delay.
+
+## [Connection and Consumer Recovery](#table-of-contents)
+
+The library keeps consuming through the common RabbitMQ failures without restarting the service.
+
+**Lost connection.** Connections are managed by [amqp-connection-manager](https://github.com/jwalton/node-amqp-connection-manager).
+When a connection drops, the library reconnects, declares the exchanges, queues and bindings again and resumes consuming.
+
+**Consumer cancelled by the broker.** RabbitMQ cancels a consumer without closing its connection when the queue is
+deleted, or when the node that hosts a classic queue goes down. The library declares the handler's queue and its
+bindings again and subscribes after one second:
+
+```text
+The broker cancelled the consumer of queue "my.service:store_created", subscribing again
+```
+
+**Queue that can't be declared.** If the queue can't be declared yet, for example because its node is still down, the
+library retries with an exponential backoff from 1 to 10 seconds. Each queue is declared on a short-lived channel, so a
+failure affects only that handler: the other handlers keep consuming and the connection stays open. Failures are logged
+as warnings, and as errors once the queue has been failing for more than 60 seconds, which makes them a good signal to
+alert on:
+
+```text
+Failed to set up queue "my.service:store_created", retrying in 10000 ms: <error from the broker>
+```
+
+**Messages from a closed channel.** A message can only be acknowledged on the channel that delivered it. If that channel
+closes while a handler is running, the library skips the acknowledgement and logs a warning, and RabbitMQ redelivers the
+message. Handlers should therefore be safe to run more than once for the same event.
 
 ## [Known Issues](#table-of-contents)
 
