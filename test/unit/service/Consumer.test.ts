@@ -1,7 +1,7 @@
 import type { LoggerService } from '@nestjs/common';
 import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import type { BindingQueueOptions, EventBus, IHandlerWrapper } from '../../../src';
-import { Consumer } from '../../../src';
+import { AutoAckEnum, Consumer, RetryStrategyEnum } from '../../../src';
 import type { PrepareHandlerStrategies, RetryStrategies } from '../../../src/provider';
 import { LoggerProvider } from '../../../src/provider';
 import { DEFAULT_RETRY_OPTIONS } from '../../../src/utils/configuration';
@@ -26,6 +26,22 @@ describe('Consumer', () => {
         queue: 'test-queue',
     } as unknown as IHandlerWrapper;
 
+    const createConsumer = async (retryStrategies = {} as RetryStrategies, rootRetryOptions = DEFAULT_RETRY_OPTIONS): Promise<Consumer> => {
+        const instance = new Consumer(
+            eventBus as unknown as EventBus,
+            retryStrategies,
+            {},
+            rootRetryOptions,
+            {} as BindingQueueOptions,
+            {} as PrepareHandlerStrategies,
+        );
+        Reflect.set(instance, 'connection$', { connection: { createChannel: jest.fn().mockResolvedValue(topologyChannel) }, close: jest.fn() });
+        Reflect.set(instance, 'channelWrapper$', { addSetup: jest.fn(async (setup: () => Promise<void>) => setup()), close: jest.fn() });
+        await instance.setupChannel(consumerChannel as unknown as ConfirmChannel);
+
+        return instance;
+    };
+
     beforeEach(async () => {
         process.env.NODE_ENV = 'development';
         jest.useFakeTimers();
@@ -34,15 +50,6 @@ describe('Consumer', () => {
         LoggerProvider.forLogger(logger as unknown as LoggerService);
 
         eventBus = { publish: jest.fn().mockResolvedValue(undefined) };
-        consumer = new Consumer(
-            eventBus as unknown as EventBus,
-            {} as RetryStrategies,
-            {},
-            DEFAULT_RETRY_OPTIONS,
-            {} as BindingQueueOptions,
-            {} as PrepareHandlerStrategies,
-        );
-
         topologyChannel = {
             on: jest.fn(),
             assertExchange: jest.fn(),
@@ -50,11 +57,8 @@ describe('Consumer', () => {
             bindQueue: jest.fn(),
             close: jest.fn().mockResolvedValue(undefined),
         };
-        Reflect.set(consumer, 'connection$', { connection: { createChannel: jest.fn().mockResolvedValue(topologyChannel) }, close: jest.fn() });
-        Reflect.set(consumer, 'channelWrapper$', { addSetup: jest.fn(async (setup: () => Promise<void>) => setup()), close: jest.fn() });
-
         consumerChannel = { once: jest.fn(), consume: jest.fn().mockResolvedValue({ consumerTag: 'consumer-tag' }) };
-        await consumer.setupChannel(consumerChannel as unknown as ConfirmChannel);
+        consumer = await createConsumer();
     });
 
     afterEach(async () => {
@@ -100,5 +104,23 @@ describe('Consumer', () => {
 
         expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to set up queue "test-queue"'));
         expect(consumerChannel.consume).not.toHaveBeenCalled();
+    });
+
+    it('should bind the retry queue with the module retry strategy when the handler sets none', async () => {
+        const retryStrategies = {
+            [RetryStrategyEnum.DEAD_LETTER_TTL]: { bindQueue: jest.fn() },
+            [RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE]: { bindQueue: jest.fn() },
+        };
+        await consumer.onModuleDestroy();
+        consumer = await createConsumer(retryStrategies as unknown as RetryStrategies, {
+            ...DEFAULT_RETRY_OPTIONS,
+            strategy: RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE,
+        });
+
+        await consumer.consume({ ...handlerWrapper, options: { autoAck: AutoAckEnum.AUTO_RETRY } } as unknown as IHandlerWrapper, jest.fn());
+
+        const delayedStrategy = retryStrategies[RetryStrategyEnum.DELAYED_MESSAGE_EXCHANGE];
+        expect(delayedStrategy.bindQueue).toHaveBeenCalledWith(topologyChannel, expect.objectContaining({ queue: 'test-queue' }));
+        expect(retryStrategies[RetryStrategyEnum.DEAD_LETTER_TTL].bindQueue).not.toHaveBeenCalled();
     });
 });

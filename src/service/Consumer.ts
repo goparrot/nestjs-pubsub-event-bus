@@ -3,8 +3,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IEventHandler } from '@nestjs/cqrs';
 import type { Channel, ConfirmChannel, ConsumeMessage, Message, Replies } from 'amqplib';
 import { chain, uniq } from 'lodash';
-import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions } from '../interface';
-import { AutoAckEnum, BindingQueueOptions, DefaultedRetryOptions, IConsumerOptions, RetryStrategyEnum } from '../interface';
+import type { AbstractSubscriptionEvent, IChannelWrapper, IEventWrapper, IHandlerWrapper, PublishOptions, RetryStrategyEnum } from '../interface';
+import { AutoAckEnum, BindingQueueOptions, DefaultedRetryOptions, IConsumerOptions } from '../interface';
 import { HandlerBound } from '../lifecycle-event';
 import { CQRS_PREPARE_HANDLER_STRATEGIES, CQRS_RETRY_STRATEGIES, PrepareHandlerStrategies, RetryStrategies } from '../provider';
 import { appInTestingMode, toEventName, toSnakeCase } from '../utils';
@@ -300,10 +300,11 @@ export class Consumer extends PubsubManager implements IChannelWrapper {
     }
 
     /**
-     * Retry strategy of an auto-retry handler: the one set on the handler, or dead letter TTL
+     * Retry strategy of an auto-retry handler: the one set on the handler, or the module's. It must match the strategy
+     * that AutoRetryStrategy requeues messages with
      */
     private retryStrategy(wrapper: IHandlerWrapper): IRetryStrategy {
-        return this.retryStrategies[wrapper.options.retryOptions?.strategy ?? RetryStrategyEnum.DEAD_LETTER_TTL];
+        return this.retryStrategies[wrapper.options.retryOptions?.strategy ?? this.rootRetryOptions.strategy];
     }
 
     /**
