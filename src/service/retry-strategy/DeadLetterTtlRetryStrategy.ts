@@ -1,7 +1,6 @@
 import type { LoggerService } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
-import type { ChannelWrapper } from 'amqp-connection-manager';
-import type { ConfirmChannel } from 'amqplib';
+import type { Channel } from 'amqplib';
 import { chain, times } from 'lodash';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { BindingQueueOptions, DefaultedRetryOptions, ExchangeOptions, RetryStrategyEnum } from '../../interface';
@@ -31,7 +30,7 @@ export class DeadLetterTtlRetryStrategy implements IRetryStrategy {
         return LoggerProvider.logger;
     }
 
-    async setupInfrastructure(channelWrapper: ChannelWrapper, wrappersWithRetryStrategy: IHandlerWrapper[]): Promise<void> {
+    async setupInfrastructure(channel: Channel, wrappersWithRetryStrategy: IHandlerWrapper[]): Promise<void> {
         const delays = chain(wrappersWithRetryStrategy)
             .flatMap((wrapper: IHandlerWrapper) => {
                 const { delay = this.rootRetryOptions.delay, maxRetryAttempts = this.rootRetryOptions.maxRetryAttempts } = wrapper.options.retryOptions ?? {};
@@ -41,32 +40,32 @@ export class DeadLetterTtlRetryStrategy implements IRetryStrategy {
             .uniq()
             .value();
 
-        await channelWrapper.addSetup(async (channel: ConfirmChannel) => {
-            await Promise.all([
-                channel
-                    .assertExchange(DEFAULT_RETRY_DELAY_EXCHANGE_NAME, 'topic', this.assertExchangeOptions)
-                    .then(() => this.logger.log(`Delay auto retry exchange "${DEFAULT_RETRY_DELAY_EXCHANGE_NAME}" asserted`)),
-                channel
-                    .assertExchange(DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME, 'topic', this.assertExchangeOptions)
-                    .then(() => this.logger.log(`Requeue auto retry exchange "${DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME}" asserted`)),
-                ...delays.map(async (delay: number) => {
-                    const queue = `${DEFAULT_DELAY_QUEUE_NAME_PREFIX}.${delay}`;
+        await Promise.all([
+            channel
+                .assertExchange(DEFAULT_RETRY_DELAY_EXCHANGE_NAME, 'topic', this.assertExchangeOptions)
+                .then(() => this.logger.log(`Delay auto retry exchange "${DEFAULT_RETRY_DELAY_EXCHANGE_NAME}" asserted`)),
+            channel
+                .assertExchange(DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME, 'topic', this.assertExchangeOptions)
+                .then(() => this.logger.log(`Requeue auto retry exchange "${DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME}" asserted`)),
+            ...delays.map(async (delay: number) => {
+                const queue = `${DEFAULT_DELAY_QUEUE_NAME_PREFIX}.${delay}`;
 
-                    await channel.assertQueue(queue, {
-                        ...this.bindingQueueOptions,
-                        messageTtl: delay,
-                        deadLetterExchange: DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME,
-                    });
-                    await channel.bindQueue(queue, DEFAULT_RETRY_DELAY_EXCHANGE_NAME, `#.retry.${delay}`);
+                await channel.assertQueue(queue, {
+                    ...this.bindingQueueOptions,
+                    messageTtl: delay,
+                    deadLetterExchange: DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME,
+                });
+                await channel.bindQueue(queue, DEFAULT_RETRY_DELAY_EXCHANGE_NAME, `#.retry.${delay}`);
 
-                    this.logger.log(`Delay queue asserted "${queue}" asserted`);
-                }),
-                ...wrappersWithRetryStrategy.map(async (handlerWrapper: IHandlerWrapper) => {
-                    const { queue } = handlerWrapper;
-                    await channel.bindQueue(queue, DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME, `${queue}.#`);
-                }),
-            ]);
-        });
+                this.logger.log(`Delay queue asserted "${queue}" asserted`);
+            }),
+        ]);
+    }
+
+    async bindQueue(channel: Channel, { queue }: IHandlerWrapper): Promise<void> {
+        // The handler's set-up can run before the retry infrastructure is declared, so the exchange is asserted here too
+        await channel.assertExchange(DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME, 'topic', this.assertExchangeOptions);
+        await channel.bindQueue(queue, DEFAULT_RETRY_REQUEUE_EXCHANGE_NAME, `${queue}.#`);
     }
 
     async requeue(channelWrapper: IChannelWrapper, handlerWrapper: IHandlerWrapper, event: AbstractSubscriptionEvent<any>): Promise<void> {

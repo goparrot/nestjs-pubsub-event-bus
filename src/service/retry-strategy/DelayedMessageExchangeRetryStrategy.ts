@@ -1,7 +1,7 @@
 import type { LoggerService } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
-import type { ChannelWrapper, Options } from 'amqp-connection-manager';
-import type { ConfirmChannel } from 'amqplib';
+import type { Options } from 'amqp-connection-manager';
+import type { Channel } from 'amqplib';
 import type { AbstractSubscriptionEvent, IChannelWrapper, IHandlerWrapper } from '../../interface';
 import { DefaultedRetryOptions, ExchangeOptions, RetryStrategyEnum } from '../../interface';
 import { LoggerProvider } from '../../provider';
@@ -23,23 +23,16 @@ export class DelayedMessageExchangeRetryStrategy implements IRetryStrategy {
         return LoggerProvider.logger;
     }
 
-    async setupInfrastructure(channelWrapper: ChannelWrapper, wrappersWithRetryStrategy: IHandlerWrapper[]): Promise<void> {
-        const delayedExchangeOptions: Options.AssertExchange = {
-            ...this.assertExchangeOptions,
-            arguments: { ...this.assertExchangeOptions.arguments, 'x-delayed-type': 'direct' },
-        };
+    async setupInfrastructure(channel: Channel, _wrappersWithRetryStrategy: IHandlerWrapper[]): Promise<void> {
+        await this.assertDelayedExchange(channel);
 
-        await channelWrapper.addSetup(async (channel: ConfirmChannel) => {
-            await Promise.all([
-                channel.assertExchange(DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, 'x-delayed-message', delayedExchangeOptions),
-                ...wrappersWithRetryStrategy.map(async (handlerWrapper: IHandlerWrapper) => {
-                    const { queue } = handlerWrapper;
-                    return channel.bindQueue(queue, DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, queue);
-                }),
-            ]);
+        this.logger.log(`Delayed message auto retry exchange "${DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME}" asserted`);
+    }
 
-            this.logger.log(`Delayed message auto retry exchange "${DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME}" asserted`);
-        });
+    async bindQueue(channel: Channel, { queue }: IHandlerWrapper): Promise<void> {
+        // The handler's set-up can run before the retry infrastructure is declared, so the exchange is asserted here too
+        await this.assertDelayedExchange(channel);
+        await channel.bindQueue(queue, DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, queue);
     }
 
     async requeue(channelWrapper: IChannelWrapper, handlerWrapper: IHandlerWrapper, event: AbstractSubscriptionEvent<any>): Promise<void> {
@@ -72,5 +65,14 @@ export class DelayedMessageExchangeRetryStrategy implements IRetryStrategy {
         });
 
         this.logger.log(`Event ${event.constructor.name} was republished to "${queue}" queue with ${delayValue} ms delay`, handler.name);
+    }
+
+    private async assertDelayedExchange(channel: Channel): Promise<void> {
+        const delayedExchangeOptions: Options.AssertExchange = {
+            ...this.assertExchangeOptions,
+            arguments: { ...this.assertExchangeOptions.arguments, 'x-delayed-type': 'direct' },
+        };
+
+        await channel.assertExchange(DEFAULT_RETRY_DELAYED_MESSAGE_EXCHANGE_NAME, 'x-delayed-message', delayedExchangeOptions);
     }
 }
