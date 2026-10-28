@@ -29,6 +29,11 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [16, 18, 20]
+        nestjs-version: [8, 9, 10]
+        include:
+          # The decorators of NestJS 8 don't type check with TypeScript 5
+          - nestjs-version: 8
+            typescript-version: ~4.9.5
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +53,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }} with NestJS ${{ matrix.nestjs-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -59,6 +64,18 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci --progress=false --loglevel=warn --ignore-scripts
+
+      - name: Install NestJS ${{ matrix.nestjs-version }}
+        run: |
+          npm install --save-dev --progress=false --loglevel=warn --ignore-scripts \
+            @nestjs/common@^${{ matrix.nestjs-version }} \
+            @nestjs/core@^${{ matrix.nestjs-version }} \
+            @nestjs/cqrs@^${{ matrix.nestjs-version }} \
+            @nestjs/testing@^${{ matrix.nestjs-version }}
+
+      - name: Install TypeScript ${{ matrix.typescript-version }}
+        if: matrix.typescript-version
+        run: npm install --save-dev --progress=false --loglevel=warn --ignore-scripts typescript@${{ matrix.typescript-version }}
 
       - name: Type check
         run: npm run typecheck

@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { IEvent } from '@nestjs/cqrs';
-import { EventBus as NestEventBus, UnhandledExceptionBus } from '@nestjs/cqrs';
+import { EventBus as NestEventBus } from '@nestjs/cqrs';
+import { CQRS_UNHANDLED_EXCEPTION_BUS } from '../provider';
 import { CommandBus } from './CommandBus';
 import { Producer } from './Producer';
 import { Publisher } from './Publisher';
@@ -19,13 +20,17 @@ export class EventBus extends NestEventBus<IEvent> {
         this._pubSubPublisher = pubSubPublisher;
     }
 
+    /**
+     * @param unhandledExceptionBus UnhandledExceptionBus of @nestjs/cqrs 10, which earlier versions don't have
+     */
     constructor(
         commandBus: CommandBus,
         moduleRefs: ModuleRef,
-        unhandledExceptionBus: UnhandledExceptionBus,
+        @Optional() @Inject(CQRS_UNHANDLED_EXCEPTION_BUS) unhandledExceptionBus: unknown,
         private readonly producer: Producer,
     ) {
-        super(commandBus, moduleRefs, unhandledExceptionBus);
+        // The base constructor takes the UnhandledExceptionBus only since @nestjs/cqrs 10, earlier versions ignore it
+        super(...([commandBus, moduleRefs, unhandledExceptionBus] as unknown[] as ConstructorParameters<typeof NestEventBus>));
         this.usePubSubPublisher();
     }
 
