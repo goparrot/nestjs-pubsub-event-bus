@@ -27,7 +27,8 @@ export class EventBus extends NestEventBus<IEvent> {
         commandBus: CommandBus,
         moduleRefs: ModuleRef,
         @Optional() @Inject(CQRS_UNHANDLED_EXCEPTION_BUS) unhandledExceptionBus: unknown,
-        private readonly producer: Producer,
+        // The EventBus of @nestjs/cqrs 11 decorates its fourth parameter, and this class inherits that metadata
+        @Inject(Producer) private readonly producer: Producer,
     ) {
         // The base constructor takes the UnhandledExceptionBus only since @nestjs/cqrs 10, earlier versions ignore it
         super(...([commandBus, moduleRefs, unhandledExceptionBus] as unknown[] as ConstructorParameters<typeof NestEventBus>));
