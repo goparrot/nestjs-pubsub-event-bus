@@ -13,8 +13,19 @@ export class ExplorerService extends NestExplorerService {
     }
 
     pubsubEvents(): Type<AbstractPubsubAnyEventHandler>[] {
-        return this.flatMap<AbstractPubsubAnyEventHandler>([...this.modules.values()], (instance: InstanceWrapper) => {
-            return this.filterProvider(instance, PUBSUB_EVENT_HANDLER_METADATA);
-        });
+        return [...this.modules.values()].flatMap((module) =>
+            [...module.providers.values()].flatMap((wrapper: InstanceWrapper) => this.pubsubHandlerOf(wrapper)),
+        );
+    }
+
+    /**
+     * The same lookup as the provider filter of @nestjs/cqrs, whose helpers return instance wrappers instead of classes since 11
+     */
+    private pubsubHandlerOf({ instance }: InstanceWrapper): Type<AbstractPubsubAnyEventHandler>[] {
+        const handler: unknown = (instance as object | undefined)?.constructor;
+
+        return typeof handler === 'function' && Reflect.getMetadata(PUBSUB_EVENT_HANDLER_METADATA, handler)
+            ? [handler as Type<AbstractPubsubAnyEventHandler>]
+            : [];
     }
 }
