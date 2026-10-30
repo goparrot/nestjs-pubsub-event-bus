@@ -84,8 +84,8 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Dry run of publishing
-        run: npm run publish:dev:dry
+      - name: Pack the package
+        run: npm run build:dist && npx ts-node -T bin/prepublish.ts && npm pack ./dist --dry-run
 
       - name: Lint code
         run: npm run lint
