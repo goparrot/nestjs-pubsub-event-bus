@@ -28,8 +28,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16, 18, 20]
-        nestjs-version: [8, 9, 10]
+        node-version: [16, 20, 22, 24]
+        nestjs-version: [8, 9, 10, 11]
+        exclude:
+          # @nestjs/core 11 needs Node.js 20 or later
+          - node-version: 16
+            nestjs-version: 11
         include:
           # The decorators of NestJS 8 don't type check with TypeScript 5
           - nestjs-version: 8
