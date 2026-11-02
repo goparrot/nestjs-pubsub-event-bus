@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.1.0](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v5.0.1...v5.1.0) (2026-11-02)
+
+
+### Features
+
+* support NestJS 11 ([6bc797c](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/6bc797ca8e0758506540ab44670d7f9b9f6b659e))
+* support NestJS 8 and 9 ([3b5c080](https://github.com/goparrot/nestjs-pubsub-event-bus/commit/3b5c080a972bd16fa3fa7f5c338931b0f851429c))
+
 ## [5.0.1](https://github.com/goparrot/nestjs-pubsub-event-bus/compare/v5.0.0...v5.0.1) (2026-10-28)
 
 
